@@ -13,7 +13,7 @@ export const generateAgriAdvice = async (factSheet: any, type: 'CROP' | 'ANIMAL'
   if (!apiKey) return "AI Key not configured.";
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); // Using 2.5 flash as requested in prompt history for stability
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }); 
 
     const prompt = `
       You are an expert ${type === 'CROP' ? 'Agronomist' : 'Veterinary Scientist'} for Terra Oracle.

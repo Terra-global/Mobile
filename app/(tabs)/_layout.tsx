@@ -56,7 +56,6 @@ export default function TabLayout() {
 
         {/* Hidden screens - files exist but should not appear as tabs */}
         <Tabs.Screen name="inventory" options={{ href: null }} />
-        <Tabs.Screen name="create_tab" options={{ href: null }} />
 
         <Tabs.Screen
           name="create"

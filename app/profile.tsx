@@ -110,7 +110,7 @@ export default function ProfileScreen() {
       <View style={styles.profileInfo}>
         <View style={styles.avatarContainer}>
           <Image 
-            source={{ uri: profile?.avatarUrl || 'https://api.dicebear.com/7.x/identicon/png?seed=' + profile?.username }} 
+            source={{ uri: (isOwnProfile ? currentUser?.avatarUrl : profile?.avatarUrl) || 'https://api.dicebear.com/7.x/identicon/png?seed=' + profile?.username }} 
             style={styles.avatar} 
           />
         </View>

@@ -7,11 +7,13 @@ import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
 import api from '../../utils/api';
 import { useAuthStore } from '../../store/authStore';
+import { useAlertStore } from '../../store/alertStore';
 
 export default function AccountInfoScreen() {
   const router = useRouter();
   const user = useAuthStore(state => state.user);
   const updateUser = useAuthStore(state => state.updateUser);
+  const { showAlert } = useAlertStore();
   
   const [isEditing, setIsEditing] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
@@ -23,6 +25,7 @@ export default function AccountInfoScreen() {
   const [bio, setBio] = React.useState(user?.bio || '');
   const [website, setWebsite] = React.useState(user?.website || '');
   const [avatarUrl, setAvatarUrl] = React.useState(user?.avatarUrl || '');
+  const [pickedAsset, setPickedAsset] = React.useState<any>(null); // stores full ImagePicker asset
   
   const [farmTypes, setFarmTypes] = React.useState<any[]>([]);
 
@@ -53,8 +56,10 @@ export default function AccountInfoScreen() {
       quality: 0.7,
     });
 
-    if (!result.canceled) {
-      setAvatarUrl(result.assets[0].uri);
+    if (!result.canceled && result.assets?.length > 0) {
+      const asset = result.assets[0];
+      setPickedAsset(asset);      // save full asset for upload
+      setAvatarUrl(asset.uri);    // show preview immediately
     }
   };
 
@@ -63,20 +68,26 @@ export default function AccountInfoScreen() {
     try {
       let finalAvatarUrl = avatarUrl;
       
-      // Upload avatar if it's a new local file
-      if (avatarUrl && avatarUrl.startsWith('file://')) {
+      // Upload avatar if a new image was picked from gallery
+      if (pickedAsset) {
         const formData = new FormData();
+        // Derive a safe extension from mimeType (e.g. image/jpeg → .jpg)
+        const ext = (pickedAsset.mimeType || 'image/jpeg').split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
+        const filename = `avatar.${ext}`;
         // @ts-ignore
         formData.append('file', {
-          uri: avatarUrl,
-          name: 'avatar.jpg',
-          type: 'image/jpeg',
+          uri: pickedAsset.uri,
+          name: filename,
+          type: pickedAsset.mimeType || 'image/jpeg',
         });
         
         const uploadRes = await api.post('/upload/single', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
-        finalAvatarUrl = uploadRes.data.url;
+        finalAvatarUrl = uploadRes.data.data.url;
+        console.log('🖼️ Upload response URL:', finalAvatarUrl); // DEBUG
+        setAvatarUrl(finalAvatarUrl); // update preview to R2 URL
+        setPickedAsset(null);         // clear picked asset
       }
 
       const updateData = { 
@@ -89,8 +100,10 @@ export default function AccountInfoScreen() {
       await api.patch('/users/profile', updateData);
       updateUser(updateData);
       setIsEditing(false);
-    } catch (error) {
+      showAlert('Profile updated!', 'success');
+    } catch (error: any) {
       console.error('Failed to update profile:', error);
+      showAlert(error.response?.data?.message || 'Failed to update profile', 'error');
     } finally {
       setLoading(false);
     }
