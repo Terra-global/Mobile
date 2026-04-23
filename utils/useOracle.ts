@@ -24,6 +24,10 @@ export const useOracle = () => {
       finalLon = options.manualCoords.lon;
     } else {
       // 1. Get native GPS from the phone
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        throw new Error('Not authorized to use location services. Please enable them in your phone settings.');
+      }
       const { coords } = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       finalLat = coords.latitude;
       finalLon = coords.longitude;
