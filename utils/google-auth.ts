@@ -20,6 +20,16 @@ export const configureGoogleSignin = () => {
   }
 };
 
+export const signOutGoogle = async () => {
+  if (GoogleSignin) {
+    try {
+      await GoogleSignin.signOut();
+    } catch (error) {
+      console.error('Google SignOut Error:', error);
+    }
+  }
+};
+
 export const handleGoogleSignIn = async (setAuth: Function, router: any, showAlert: Function, setLoading: Function) => {
   if (!GoogleSignin) {
     showAlert('Google Sign-In is not supported in Expo Go. Please use a Development Build.', 'error');

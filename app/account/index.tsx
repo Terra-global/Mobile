@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '../../store/authStore';
+import { signOutGoogle } from '../../utils/google-auth';
 
 export default function YourAccountScreen() {
   const router = useRouter();
@@ -67,7 +68,8 @@ export default function YourAccountScreen() {
         
         <TouchableOpacity 
           style={styles.item} 
-          onPress={() => {
+          onPress={async () => {
+            await signOutGoogle();
             clearAuth();
             router.replace('/(auth)/login');
           }}
