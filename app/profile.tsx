@@ -30,6 +30,8 @@ export default function ProfileScreen() {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<'posts' | 'likes'>('posts');
   const [likedPosts, setLikedPosts] = useState<any[]>([]);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [processingFollow, setProcessingFollow] = useState(false);
   const clearAuth = useAuthStore(state => state.clearAuth);
   const setIsLoading = useLoadingStore(state => state.setIsLoading);
   const { theme } = useThemeStore();
@@ -41,6 +43,7 @@ export default function ProfileScreen() {
       const res = await api.get(`/users/profile/${userId}`);
       if (res.data.success) {
         setProfile(res.data.data);
+        setIsFollowing(res.data.data.isFollowing);
       }
     } catch (error) {
       console.error('Failed to fetch profile:', error);
@@ -129,6 +132,31 @@ export default function ProfileScreen() {
     }
   };
 
+  const toggleFollow = async () => {
+    if (processingFollow || !userId || isOwnProfile) return;
+    
+    try {
+      setProcessingFollow(true);
+      const res = await api.post(`/users/follow/${userId}`);
+      if (res.data.success) {
+        setIsFollowing(res.data.data.following);
+        setProfile((prev: any) => ({
+          ...prev,
+          _count: {
+            ...prev._count,
+            followers: res.data.data.following 
+              ? prev._count.followers + 1 
+              : Math.max(0, prev._count.followers - 1)
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to toggle follow:', error);
+    } finally {
+      setProcessingFollow(false);
+    }
+  };
+
   useEffect(() => {
     loadData();
   }, [userId, activeTab]);
@@ -181,6 +209,29 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           )}
         </View>
+
+        {!isOwnProfile && profile && (
+          <View style={styles.actionButtons}>
+            <TouchableOpacity 
+              style={[
+                styles.followButton, 
+                { backgroundColor: isFollowing ? 'transparent' : themeColors.tint, borderColor: isFollowing ? themeColors.border : themeColors.tint }
+              ]}
+              onPress={toggleFollow}
+              disabled={processingFollow}
+            >
+              <Text style={[styles.followButtonText, { color: isFollowing ? themeColors.text : '#fff' }]}>
+                {isFollowing ? 'Following' : 'Follow'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.messageButton, { backgroundColor: themeColors.card, borderColor: themeColors.border }]}
+              onPress={() => router.push(`/messages/${userId}?name=${encodeURIComponent(profile.username)}` as any)}
+            >
+              <Ionicons name="mail-outline" size={20} color={themeColors.text} />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       <View style={[styles.tabs, { borderBottomColor: themeColors.border }]}>
@@ -347,6 +398,32 @@ const styles = StyleSheet.create({
   statItem: { flexDirection: 'row', gap: 4 },
   statNumber: { fontWeight: 'bold' },
   statLabel: { },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 20,
+    marginTop: 5,
+  },
+  followButton: {
+    flex: 1,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  followButtonText: {
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
+  messageButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+  },
   tabs: { flexDirection: 'row', borderBottomWidth: 0.5 },
   tab: { flex: 1, alignItems: 'center', paddingVertical: 14 },
   activeTab: { borderBottomWidth: 2 },

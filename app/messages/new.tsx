@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ import { Colors } from '../../constants/theme';
 export default function NewMessageScreen() {
   const [following, setFollowing] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
   const { theme } = useThemeStore();
   const themeColors = Colors[theme];
@@ -29,7 +30,13 @@ export default function NewMessageScreen() {
       console.error('Failed to fetch following:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchFollowing();
   };
 
   const renderItem = ({ item }: { item: any }) => (
@@ -69,16 +76,25 @@ export default function NewMessageScreen() {
         <View style={styles.center}>
           <ActivityIndicator size="large" color={themeColors.tint} />
         </View>
-      ) : following.length === 0 ? (
-        <View style={styles.center}>
-          <Ionicons name="people-outline" size={64} color={themeColors.border} />
-          <Text style={[styles.emptyText, { color: themeColors.subtext }]}>You're not following anyone yet.</Text>
-        </View>
       ) : (
         <FlatList
           data={following}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
+          contentContainerStyle={following.length === 0 && { flex: 1 }}
+          ListEmptyComponent={
+            <View style={styles.center}>
+              <Ionicons name="people-outline" size={64} color={themeColors.border} />
+              <Text style={[styles.emptyText, { color: themeColors.subtext }]}>You're not following anyone yet.</Text>
+            </View>
+          }
+          refreshControl={
+            <RefreshControl 
+              refreshing={refreshing} 
+              onRefresh={onRefresh} 
+              tintColor={themeColors.tint} 
+            />
+          }
         />
       )}
     </SafeAreaView>
