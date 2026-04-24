@@ -105,19 +105,11 @@ export default function SideDrawer({ children }: { children: React.ReactNode }) 
             
             <View style={styles.toolGrid}>
               <TouchableOpacity 
-                style={[styles.gridItem, styles.borderRight, styles.borderBottom, { borderRightColor: themeColors.border, borderBottomColor: themeColors.border, borderTopColor: themeColors.border }]} 
-                onPress={() => navigateTo('/oracle/crop')}
+                style={[styles.gridItem, styles.borderBottom, { borderBottomColor: themeColors.border, borderTopColor: themeColors.border, width: '100%' }]} 
+                onPress={() => navigateTo('/oracle')}
               >
-                <Ionicons name="leaf-outline" size={32} color={themeColors.tint} />
-                <Text style={[styles.gridLabel, { color: themeColors.text }]}>Crop Data</Text>
-              </TouchableOpacity>
- 
-              <TouchableOpacity 
-                style={[styles.gridItem, styles.borderBottom, { borderBottomColor: themeColors.border, borderTopColor: themeColors.border }]} 
-                onPress={() => navigateTo('/oracle/animal')}
-              >
-                <Ionicons name="paw-outline" size={32} color={themeColors.tint} />
-                <Text style={[styles.gridLabel, { color: themeColors.text }]}>Animal Data</Text>
+                <Ionicons name="sparkles-outline" size={32} color={themeColors.tint} />
+                <Text style={[styles.gridLabel, { color: themeColors.text }]}>Terra Oracle</Text>
               </TouchableOpacity>
             </View>
           </View>

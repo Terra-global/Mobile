@@ -12,8 +12,7 @@ type Shortcut = {
 };
 
 const SHORTCUTS: Shortcut[] = [
-  { label: 'Crop',    icon: 'leaf-outline',        route: '/oracle/crop' },
-  { label: 'Animal',  icon: 'paw-outline',         route: '/oracle/animal' },
+  { label: 'Oracle',  icon: 'sparkles-outline',    route: '/oracle' },
   { label: 'Messages',icon: 'chatbubbles-outline', route: '/messages' },
 ];
 
