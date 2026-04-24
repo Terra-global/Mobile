@@ -5,6 +5,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { useThemeStore } from '@/store/themeStore';
+import { Colors } from '@/constants/theme';
 
 import api from '../../utils/api';
 import { useAuthStore } from '../../store/authStore';
@@ -19,6 +21,8 @@ export default function ProfilePicScreen() {
   const insets = useSafeAreaInsets();
   const { user, updateUser } = useAuthStore();
   const { showAlert } = useAlertStore();
+  const { theme } = useThemeStore();
+  const themeColors = Colors[theme];
   const [selected, setSelected] = useState(0);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -107,20 +111,20 @@ export default function ProfilePicScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: Math.max(insets.top, 20) }]}>
-      <StatusBar style="light" />
+    <View style={[styles.container, { backgroundColor: themeColors.background, paddingTop: Math.max(insets.top, 20) }]}>
+      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
 
       {/* Header */}
       <View style={styles.topBar}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={24} color="#c1ff72" />
+          <Ionicons name="chevron-back" size={24} color={themeColors.tint} />
         </TouchableOpacity>
-        <Text style={styles.topBarTitle}>Profile Picture</Text>
+        <Text style={[styles.topBarTitle, { color: themeColors.subtext }]}>Profile Picture</Text>
         <TouchableOpacity 
           style={styles.nextButton} 
           onPress={() => router.push('/(onboarding)/bio')}
         >
-          <Text style={styles.nextText}>Next</Text>
+          <Text style={[styles.nextText, { color: themeColors.tint }]}>Next</Text>
         </TouchableOpacity>
       </View>
 
@@ -131,25 +135,25 @@ export default function ProfilePicScreen() {
             <Image source={{ uri: currentAvatar }} style={styles.avatar} />
             {uploading && (
               <View style={styles.uploadOverlay}>
-                <ActivityIndicator color="#c1ff72" />
+                <ActivityIndicator color={themeColors.tint} />
               </View>
             )}
           </View>
           
           <TouchableOpacity 
-            style={styles.uploadBtn} 
+            style={[styles.uploadBtn, { backgroundColor: themeColors.tint }]} 
             onPress={pickImage}
             disabled={uploading}
           >
-            <Ionicons name="camera" size={20} color="#1e2126" />
+            <Ionicons name="camera" size={20} color="#fff" />
             <Text style={styles.uploadBtnText}>Upload from Gallery</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.divider}>
-          <View style={styles.line} />
-          <Text style={styles.dividerText}>OR CHOOSE AN AVATAR</Text>
-          <View style={styles.line} />
+          <View style={[styles.line, { backgroundColor: themeColors.border }]} />
+          <Text style={[styles.dividerText, { color: themeColors.subtext }]}>OR CHOOSE AN AVATAR</Text>
+          <View style={[styles.line, { backgroundColor: themeColors.border }]} />
         </View>
 
         {/* Avatar Grid */}
@@ -160,7 +164,7 @@ export default function ProfilePicScreen() {
               onPress={() => handleSelect(index)}
               style={[
                 styles.gridItem, 
-                currentAvatar.includes(seed) && styles.gridItemSelected
+                currentAvatar.includes(AVATAR_OPTIONS[index]) && { borderColor: themeColors.tint }
               ]}
               disabled={loading || uploading}
             >
@@ -172,19 +176,19 @@ export default function ProfilePicScreen() {
           ))}
         </View>
 
-        <Text style={styles.saveNote}>Changes are saved automatically</Text>
+        <Text style={[styles.saveNote, { color: themeColors.subtext }]}>Changes are saved automatically</Text>
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1e2126' },
+  container: { flex: 1 },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 16 },
   backButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  topBarTitle: { color: '#fff', fontSize: 15, fontFamily: 'Roboto', opacity: 0.7, letterSpacing: 0.5 },
+  topBarTitle: { fontSize: 15, fontFamily: 'Roboto', letterSpacing: 0.5 },
   nextButton: { paddingHorizontal: 12, paddingVertical: 6 },
-  nextText: { color: '#c1ff72', fontSize: 16, fontWeight: '600' },
+  nextText: { fontSize: 16, fontWeight: '600' },
   
   content: { alignItems: 'center', paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
   
@@ -194,7 +198,6 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
     overflow: 'hidden',
-    backgroundColor: '#2a2d34',
     borderWidth: 3,
     borderColor: '#38383d',
     marginBottom: 20,
@@ -218,16 +221,15 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     gap: 8,
   },
-  uploadBtnText: { color: '#1e2126', fontSize: 14, fontWeight: 'bold' },
+  uploadBtnText: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
 
   divider: { flexDirection: 'row', alignItems: 'center', gap: 15, marginBottom: 30, width: '100%' },
-  line: { flex: 1, height: 1, backgroundColor: '#38383d' },
-  dividerText: { color: '#64748b', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
+  line: { flex: 1, height: 1 },
+  dividerText: { fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
 
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, justifyContent: 'center', marginBottom: 40 },
   gridItem: { borderRadius: 36, borderWidth: 2, borderColor: 'transparent', padding: 2 },
-  gridItemSelected: { borderColor: '#c1ff72' },
-  gridAvatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#38383d' },
+  gridAvatar: { width: 64, height: 64, borderRadius: 32 },
   
-  saveNote: { color: '#64748b', fontSize: 12, fontFamily: 'Roboto' },
+  saveNote: { fontSize: 12, fontFamily: 'Roboto' },
 });

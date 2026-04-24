@@ -5,13 +5,23 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '../../store/authStore';
+import { useThemeStore } from '../../store/themeStore';
+import { Colors } from '../../constants/theme';
 import { signOutGoogle } from '../../utils/google-auth';
 
 export default function YourAccountScreen() {
   const router = useRouter();
   const clearAuth = useAuthStore(state => state.clearAuth);
+  const { theme, toggleTheme } = useThemeStore();
+  const themeColors = Colors[theme];
 
   const menuItems = [
+    {
+      icon: theme === 'dark' ? 'moon-outline' : 'sunny-outline',
+      title: 'Display theme',
+      description: `Switch to ${theme === 'dark' ? 'light' : 'dark'} mode.`,
+      onPress: toggleTheme
+    },
     {
       icon: 'person-outline',
       title: 'Account information',
@@ -36,35 +46,35 @@ export default function YourAccountScreen() {
   ];
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar style="light" />
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]} edges={['top']}>
+      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
       
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#c1ff72" />
+          <Ionicons name="arrow-back" size={24} color={themeColors.tint} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Your account</Text>
+        <Text style={[styles.headerTitle, { color: themeColors.text }]}>Your account</Text>
       </View>
 
       <ScrollView style={styles.content}>
-        <Text style={styles.introText}>
+        <Text style={[styles.introText, { color: themeColors.subtext }]}>
           See information about your account, download an archive of your data or learn about your account deactivation options.
         </Text>
 
         {menuItems.map((item, index) => (
           <TouchableOpacity key={index} style={styles.item} onPress={item.onPress}>
             <View style={styles.iconBox}>
-              <Ionicons name={item.icon as any} size={22} color="#94a3b8" />
+              <Ionicons name={item.icon as any} size={22} color={themeColors.icon} />
             </View>
             <View style={styles.textBox}>
-              <Text style={styles.itemTitle}>{item.title}</Text>
-              <Text style={styles.itemDescription}>{item.description}</Text>
+              <Text style={[styles.itemTitle, { color: themeColors.text }]}>{item.title}</Text>
+              <Text style={[styles.itemDescription, { color: themeColors.subtext }]}>{item.description}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color="#38383d" />
+            <Ionicons name="chevron-forward" size={18} color={themeColors.border} />
           </TouchableOpacity>
         ))}
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: themeColors.border }]} />
         
         <TouchableOpacity 
           style={styles.item} 
@@ -79,7 +89,7 @@ export default function YourAccountScreen() {
           </View>
           <View style={styles.textBox}>
             <Text style={[styles.itemTitle, { color: '#ff4b4b' }]}>Log out</Text>
-            <Text style={styles.itemDescription}>Sign out of your account on this device.</Text>
+            <Text style={[styles.itemDescription, { color: themeColors.subtext }]}>Sign out of your account on this device.</Text>
           </View>
         </TouchableOpacity>
       </ScrollView>
@@ -88,7 +98,7 @@ export default function YourAccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1e2126' },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -96,10 +106,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     gap: 20,
   },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold' },
   content: { flex: 1 },
   introText: {
-    color: '#94a3b8',
     fontSize: 14,
     paddingHorizontal: 16,
     paddingVertical: 16,
@@ -113,7 +122,7 @@ const styles = StyleSheet.create({
   },
   iconBox: { width: 40 },
   textBox: { flex: 1, paddingRight: 10 },
-  itemTitle: { color: '#fff', fontSize: 16, marginBottom: 4 },
-  itemDescription: { color: '#64748b', fontSize: 13, lineHeight: 18 },
-  divider: { height: 1, backgroundColor: '#2a2d34', marginHorizontal: 16 },
+  itemTitle: { fontSize: 16, marginBottom: 4 },
+  itemDescription: { fontSize: 13, lineHeight: 18 },
+  divider: { height: 1, marginHorizontal: 16 },
 });

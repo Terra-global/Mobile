@@ -8,12 +8,16 @@ import * as ImagePicker from 'expo-image-picker';
 import api from '../../utils/api';
 import { useAuthStore } from '../../store/authStore';
 import { useAlertStore } from '../../store/alertStore';
+import { useThemeStore } from '../../store/themeStore';
+import { Colors } from '../../constants/theme';
 
 export default function AccountInfoScreen() {
   const router = useRouter();
   const user = useAuthStore(state => state.user);
   const updateUser = useAuthStore(state => state.updateUser);
   const { showAlert } = useAlertStore();
+  const { theme } = useThemeStore();
+  const themeColors = Colors[theme];
   
   const [isEditing, setIsEditing] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
@@ -110,31 +114,31 @@ export default function AccountInfoScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]} edges={['top']}>
       <StatusBar style="light" />
       
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#c1ff72" />
+          <Ionicons name="arrow-back" size={24} color={themeColors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Account information</Text>
+        <Text style={[styles.headerTitle, { color: themeColors.text }]}>Account information</Text>
         <View style={{ flex: 1 }} />
         <TouchableOpacity onPress={() => isEditing ? handleSave() : setIsEditing(true)}>
           {loading ? (
-            <ActivityIndicator size="small" color="#c1ff72" />
+            <ActivityIndicator size="small" color={themeColors.tint} />
           ) : (
-            <Text style={styles.editButtonText}>{isEditing ? 'Save' : 'Edit'}</Text>
+            <Text style={[styles.editButtonText, { color: themeColors.tint }]}>{isEditing ? 'Save' : 'Edit'}</Text>
           )}
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Profile Picture Section */}
-        <View style={styles.avatarSection}>
+        <View style={[styles.avatarSection, { backgroundColor: themeColors.background }]}>
           <TouchableOpacity 
             activeOpacity={isEditing ? 0.7 : 1} 
             onPress={pickImage}
-            style={styles.avatarContainer}
+            style={[styles.avatarContainer, { backgroundColor: themeColors.card }]}
           >
             <Image 
               source={{ uri: avatarUrl || 'https://api.dicebear.com/7.x/identicon/png?seed=' + (username || 'User') }} 
@@ -146,10 +150,10 @@ export default function AccountInfoScreen() {
               </View>
             )}
           </TouchableOpacity>
-          <Text style={styles.avatarHint}>{isEditing ? 'Tap to change photo' : 'Profile Picture'}</Text>
+          <Text style={[styles.avatarHint, { color: themeColors.subtext }]}>{isEditing ? 'Tap to change photo' : 'Profile Picture'}</Text>
         </View>
 
-        <Text style={styles.introText}>
+        <Text style={[styles.introText, { color: themeColors.subtext }]}>
           Manage your public presence on Terra. Some information is read-only and can only be changed by contacting support.
         </Text>
 
@@ -160,6 +164,7 @@ export default function AccountInfoScreen() {
           value={username} 
           onChangeText={setUsername} 
           isEditing={isEditing} 
+          themeColors={themeColors}
         />
         <EditableItem 
           icon="globe-outline" 
@@ -168,6 +173,7 @@ export default function AccountInfoScreen() {
           onChangeText={setWebsite} 
           isEditing={isEditing} 
           autoCapitalize="none" 
+          themeColors={themeColors}
         />
         <EditableItem 
           icon="document-text-outline" 
@@ -177,9 +183,10 @@ export default function AccountInfoScreen() {
           isEditing={isEditing} 
           multiline 
           placeholder="Tell us about yourself..." 
+          themeColors={themeColors}
         />
         
-        <View style={styles.sectionDivider} />
+        <View style={[styles.sectionDivider, { backgroundColor: themeColors.border }]} />
 
         {/* Read-only / Navigation Fields */}
         <TouchableOpacity 
@@ -187,79 +194,79 @@ export default function AccountInfoScreen() {
           onPress={() => router.push('/account/farm-type' as any)}
         >
           <View style={styles.iconBox}>
-            <Ionicons name="leaf-outline" size={22} color="#94a3b8" />
+            <Ionicons name="leaf-outline" size={22} color={themeColors.subtext} />
           </View>
           <View style={styles.textBox}>
-            <Text style={styles.itemTitle}>Farm Type</Text>
-            <Text style={styles.itemValue}>
+            <Text style={[styles.itemTitle, { color: themeColors.subtext }]}>Farm Type</Text>
+            <Text style={[styles.itemValue, { color: themeColors.text }]}>
               {currentFarmType?.name || 'select farm type'}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color="#38383d" />
+          <Ionicons name="chevron-forward" size={18} color={themeColors.border} />
         </TouchableOpacity>
 
-        <InfoItem icon="mail-outline" label="Email" value={user?.email} />
-        <InfoItem icon="earth-outline" label="Country" value={user?.country || 'not provided'} />
-        <InfoItem icon="calendar-outline" label="Account creation" value={new Date(user?.createdAt || Date.now()).toLocaleDateString()} />
+        <InfoItem icon="mail-outline" label="Email" value={user?.email} themeColors={themeColors} />
+        <InfoItem icon="earth-outline" label="Country" value={user?.country || 'not provided'} themeColors={themeColors} />
+        <InfoItem icon="calendar-outline" label="Account creation" value={new Date(user?.createdAt || Date.now()).toLocaleDateString()} themeColors={themeColors} />
 
-        <View style={styles.sectionDivider} />
+        <View style={[styles.sectionDivider, { backgroundColor: themeColors.border }]} />
         
         <TouchableOpacity style={styles.item} onPress={() => router.push('/profile' as any)}>
           <View style={styles.iconBox}>
-            <Ionicons name="eye-outline" size={22} color="#94a3b8" />
+            <Ionicons name="eye-outline" size={22} color={themeColors.subtext} />
           </View>
           <View style={styles.textBox}>
-            <Text style={styles.itemTitle}>Public Profile</Text>
-            <Text style={styles.itemValue}>Preview how others see your profile</Text>
+            <Text style={[styles.itemTitle, { color: themeColors.subtext }]}>Public Profile</Text>
+            <Text style={[styles.itemValue, { color: themeColors.text }]}>Preview how others see your profile</Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color="#38383d" />
+          <Ionicons name="chevron-forward" size={18} color={themeColors.border} />
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function EditableItem({ icon, label, value, onChangeText, isEditing, ...props }: any) {
+function EditableItem({ icon, label, value, onChangeText, isEditing, themeColors, ...props }: any) {
   return (
     <View style={styles.item}>
       <View style={styles.iconBox}>
-        <Ionicons name={icon} size={22} color="#94a3b8" />
+        <Ionicons name={icon} size={22} color={themeColors.subtext} />
       </View>
       <View style={styles.textBox}>
-        <Text style={styles.itemTitle}>{label}</Text>
+        <Text style={[styles.itemTitle, { color: themeColors.subtext }]}>{label}</Text>
         {isEditing ? (
           <TextInput
-            style={[styles.editInput, props.multiline && { height: 'auto', minHeight: 40 }]}
+            style={[styles.editInput, { color: themeColors.text, borderBottomColor: themeColors.border }, props.multiline && { height: 'auto', minHeight: 40 }]}
             value={value}
             onChangeText={onChangeText}
             placeholder={`Enter ${label.toLowerCase()}`}
-            placeholderTextColor="#64748b"
+            placeholderTextColor={themeColors.subtext}
             {...props}
           />
         ) : (
-          <Text style={styles.itemValue}>{value || 'not provided'}</Text>
+          <Text style={[styles.itemValue, { color: themeColors.text }]}>{value || 'not provided'}</Text>
         )}
       </View>
     </View>
   );
 }
 
-function InfoItem({ icon, label, value }: any) {
+function InfoItem({ icon, label, value, themeColors }: any) {
   return (
     <View style={styles.item}>
       <View style={styles.iconBox}>
-        <Ionicons name={icon} size={22} color="#94a3b8" />
+        <Ionicons name={icon} size={22} color={themeColors.subtext} />
       </View>
       <View style={styles.textBox}>
-        <Text style={styles.itemTitle}>{label}</Text>
-        <Text style={styles.itemValue}>{value}</Text>
+        <Text style={[styles.itemTitle, { color: themeColors.subtext }]}>{label}</Text>
+        <Text style={[styles.itemValue, { color: themeColors.text }]}>{value}</Text>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1e2126' },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -267,11 +274,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     gap: 20,
   },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  editButtonText: { color: '#c1ff72', fontSize: 16, fontWeight: 'bold' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold' },
+  editButtonText: { fontSize: 16, fontWeight: 'bold' },
   content: { flex: 1 },
   introText: {
-    color: '#94a3b8',
     fontSize: 14,
     paddingHorizontal: 16,
     paddingVertical: 16,
@@ -280,7 +286,6 @@ const styles = StyleSheet.create({
   avatarSection: {
     alignItems: 'center',
     paddingVertical: 20,
-    backgroundColor: '#1e2126',
   },
   avatarContainer: {
     width: 100,
@@ -288,7 +293,6 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     overflow: 'hidden',
     position: 'relative',
-    backgroundColor: '#38383d',
   },
   avatar: {
     width: '100%',
@@ -301,7 +305,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatarHint: {
-    color: '#94a3b8',
     fontSize: 12,
     marginTop: 12,
     letterSpacing: 1,
@@ -314,8 +317,8 @@ const styles = StyleSheet.create({
   },
   iconBox: { width: 40 },
   textBox: { flex: 1, paddingRight: 10 },
-  itemTitle: { color: '#94a3b8', fontSize: 12, marginBottom: 4, letterSpacing: 0.5 },
-  itemValue: { color: '#fff', fontSize: 16 },
-  editInput: { color: '#fff', fontSize: 16, paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: '#38383d' },
-  sectionDivider: { height: 1, backgroundColor: '#2a2d34', marginHorizontal: 16, marginVertical: 8 },
+  itemTitle: { fontSize: 12, marginBottom: 4, letterSpacing: 0.5 },
+  itemValue: { fontSize: 16 },
+  editInput: { fontSize: 16, paddingVertical: 4, borderBottomWidth: 1 },
+  sectionDivider: { height: 0.5, marginHorizontal: 16, marginVertical: 8 },
 });

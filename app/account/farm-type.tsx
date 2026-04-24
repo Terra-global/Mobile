@@ -6,11 +6,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import api from '../../utils/api';
 import { useAuthStore } from '../../store/authStore';
+import { useThemeStore } from '../../store/themeStore';
+import { Colors } from '../../constants/theme';
 
 export default function FarmTypeScreen() {
   const router = useRouter();
   const user = useAuthStore(state => state.user);
   const updateUser = useAuthStore(state => state.updateUser);
+  const { theme } = useThemeStore();
+  const themeColors = Colors[theme];
   
   const [farmTypes, setFarmTypes] = React.useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,20 +54,20 @@ export default function FarmTypeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar style="light" />
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]} edges={['top']}>
+      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
       
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: themeColors.border }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#c1ff72" />
+          <Ionicons name="arrow-back" size={24} color={themeColors.tint} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Farm Type</Text>
+        <Text style={[styles.headerTitle, { color: themeColors.text }]}>Farm Type</Text>
         <View style={{ width: 24 }} />
       </View>
 
       {loading ? (
         <View style={styles.centerBox}>
-          <ActivityIndicator color="#c1ff72" size="large" />
+          <ActivityIndicator color={themeColors.tint} size="large" />
         </View>
       ) : (
         <FlatList
@@ -74,33 +78,33 @@ export default function FarmTypeScreen() {
             const isSelected = item.id === user?.farmTypeId;
             return (
               <TouchableOpacity 
-                style={styles.item}
+                style={[styles.item, { backgroundColor: themeColors.background, borderBottomColor: themeColors.border }]}
                 onPress={() => handleSelect(item.id)}
                 disabled={!!savingId}
               >
                 <View style={styles.itemInfo}>
-                  <Text style={[styles.itemName, isSelected && styles.selectedText]}>
+                  <Text style={[styles.itemName, { color: themeColors.text }, isSelected && { color: themeColors.tint }]}>
                     {item.name}
                   </Text>
                   {item.description && (
-                    <Text style={styles.itemDescription} numberOfLines={1}>
+                    <Text style={[styles.itemDescription, { color: themeColors.subtext }]} numberOfLines={1}>
                       {item.description}
                     </Text>
                   )}
                 </View>
                 
                 {savingId === item.id ? (
-                  <ActivityIndicator color="#c1ff72" size="small" />
+                  <ActivityIndicator color={themeColors.tint} size="small" />
                 ) : isSelected ? (
-                  <Ionicons name="checkmark-circle" size={24} color="#c1ff72" />
+                  <Ionicons name="checkmark-circle" size={24} color={themeColors.tint} />
                 ) : (
-                  <Ionicons name="ellipse-outline" size={24} color="#38383d" />
+                  <Ionicons name="ellipse-outline" size={24} color={themeColors.border} />
                 )}
               </TouchableOpacity>
             );
           }}
           ListHeaderComponent={() => (
-            <Text style={styles.sectionTitle}>What kind of farm do you manage?</Text>
+            <Text style={[styles.sectionTitle, { color: themeColors.subtext, backgroundColor: themeColors.card }]}>What kind of farm do you manage?</Text>
           )}
         />
       )}
@@ -109,7 +113,7 @@ export default function FarmTypeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1e2126' },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -117,17 +121,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2d34',
   },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold' },
   centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   list: { paddingBottom: 40 },
   sectionTitle: {
-    color: '#94a3b8',
     fontSize: 14,
     paddingHorizontal: 20,
     paddingVertical: 24,
-    backgroundColor: '#16191d',
   },
   item: {
     flexDirection: 'row',
@@ -136,11 +137,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2d34',
-    backgroundColor: '#1e2126',
   },
   itemInfo: { flex: 1, marginRight: 16 },
-  itemName: { color: '#fff', fontSize: 16, fontWeight: '500', marginBottom: 4 },
-  itemDescription: { color: '#64748b', fontSize: 13 },
-  selectedText: { color: '#c1ff72' },
+  itemName: { fontSize: 16, fontWeight: '500', marginBottom: 4 },
+  itemDescription: { fontSize: 13 },
 });

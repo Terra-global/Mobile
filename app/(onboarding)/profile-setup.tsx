@@ -5,6 +5,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/authStore';
+import { useThemeStore } from '@/store/themeStore';
+import { Colors } from '@/constants/theme';
 
 const PROFILE_ITEMS = [
   { label: 'Profile Picture', hasAvatar: true, route: '/(onboarding)/profile-pic' },
@@ -21,17 +23,19 @@ export default function ProfileSetupScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const user = useAuthStore(state => state.user);
+  const { theme } = useThemeStore();
+  const themeColors = Colors[theme];
 
   return (
-    <View style={[styles.container, { paddingTop: Math.max(insets.top, 20) }]}>
-      <StatusBar style="light" />
+    <View style={[styles.container, { backgroundColor: themeColors.background, paddingTop: Math.max(insets.top, 20) }]}>
+      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
 
       {/* ── Fixed Header ── */}
       <View style={styles.topBar}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={24} color="#c1ff72" />
+          <Ionicons name="chevron-back" size={24} color={themeColors.tint} />
         </TouchableOpacity>
-        <Text style={styles.topBarTitle}>User Center</Text>
+        <Text style={[styles.topBarTitle, { color: themeColors.subtext }]}>User Center</Text>
         <View style={styles.backButton} />
       </View>
 
@@ -39,43 +43,43 @@ export default function ProfileSetupScreen() {
       <View style={styles.userRow}>
         <Image 
           source={{ uri: user?.avatarUrl || 'https://api.dicebear.com/7.x/identicon/png?seed=DemoUser' }} 
-          style={styles.avatar} 
+          style={[styles.avatar, { backgroundColor: themeColors.card }]} 
         />
         <View>
-          <Text style={styles.userName}>{user?.username || 'New User'}</Text>
-          <Text style={styles.userEmail}>{user?.email}</Text>
+          <Text style={[styles.userName, { color: themeColors.text }]}>{user?.username || 'New User'}</Text>
+          <Text style={[styles.userEmail, { color: themeColors.subtext }]}>{user?.email}</Text>
         </View>
       </View>
 
       {/* ── Scrollable Profile Items ── */}
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.sectionTitle}>Personal Profile</Text>
+        <Text style={[styles.sectionTitle, { color: themeColors.text }]}>Personal Profile</Text>
 
         {PROFILE_ITEMS.map((item, index) => (
           <TouchableOpacity key={index} style={styles.profileRow} onPress={() => router.push(item.route as any)}>
-            <Text style={styles.profileRowLabel}>{item.label}</Text>
+            <Text style={[styles.profileRowLabel, { color: themeColors.text }]}>{item.label}</Text>
             <View style={styles.profileRowRight}>
               {item.hasAvatar && (
                 <Image 
                   source={{ uri: user?.avatarUrl || 'https://api.dicebear.com/7.x/identicon/png?seed=DemoUser' }} 
-                  style={styles.miniAvatar} 
+                  style={[styles.miniAvatar, { backgroundColor: themeColors.card }]} 
                 />
               )}
-              <Ionicons name="chevron-forward" size={20} color="#c1ff72" />
+              <Ionicons name="chevron-forward" size={20} color={themeColors.tint} />
             </View>
           </TouchableOpacity>
         ))}
 
         {/* Go Home Button */}
-        <TouchableOpacity style={styles.goHomeButton} onPress={() => router.replace('/(tabs)')}>
+        <TouchableOpacity style={[styles.goHomeButton, { backgroundColor: themeColors.tint }]} onPress={() => router.replace('/(tabs)')}>
           <Text style={styles.goHomeButtonText}>Go Home</Text>
         </TouchableOpacity>
       </ScrollView>
 
       {/* ── Fixed Footer ── */}
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+      <View style={[styles.footer, { backgroundColor: themeColors.background, paddingBottom: Math.max(insets.bottom, 20) }]}>
         <TouchableOpacity onPress={() => router.replace('/(tabs)')}>
-          <Text style={styles.footerText}>About Us</Text>
+          <Text style={[styles.footerText, { color: themeColors.text }]}>About Us</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -85,7 +89,6 @@ export default function ProfileSetupScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1e2126',
   },
   topBar: {
     flexDirection: 'row',
@@ -101,10 +104,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   topBarTitle: {
-    color: '#fff',
     fontSize: 15,
     fontFamily: 'Roboto',
-    opacity: 0.7,
     letterSpacing: 0.5,
   },
   userRow: {
@@ -121,12 +122,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#38383d',
   },
   userName: {
-    color: '#fff',
     fontSize: 18,
     fontFamily: 'Roboto-Bold',
   },
   userEmail: {
-    color: '#999',
     fontSize: 13,
     fontFamily: 'Roboto',
     marginTop: 2,
@@ -139,11 +138,9 @@ const styles = StyleSheet.create({
     paddingTop: 24,
   },
   sectionTitle: {
-    color: '#fff',
     fontSize: 15,
     fontFamily: 'Roboto-Bold',
     marginBottom: 16,
-    opacity: 0.9,
   },
   profileRow: {
     flexDirection: 'row',
@@ -152,7 +149,6 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
   },
   profileRowLabel: {
-    color: '#fff',
     fontSize: 15,
     fontFamily: 'Roboto',
   },
@@ -175,10 +171,8 @@ const styles = StyleSheet.create({
   footer: {
     alignItems: 'center',
     paddingTop: 16,
-    backgroundColor: '#1e2126',
   },
   footerText: {
-    color: '#fff',
     fontSize: 16,
     fontFamily: 'Roboto-Bold',
   },
@@ -192,7 +186,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   goHomeButtonText: {
-    color: '#1e2126',
+    color: '#fff',
     fontSize: 18,
     fontFamily: 'Roboto-Bold',
   },

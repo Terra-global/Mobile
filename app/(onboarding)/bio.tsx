@@ -7,12 +7,16 @@ import { Ionicons } from '@expo/vector-icons';
 import api from '@/utils/api';
 import { useAuthStore } from '@/store/authStore';
 import { useAlertStore } from '@/store/alertStore';
+import { useThemeStore } from '@/store/themeStore';
+import { Colors } from '@/constants/theme';
 
 export default function BioScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, updateUser } = useAuthStore();
   const showAlert = useAlertStore(state => state.showAlert);
+  const { theme } = useThemeStore();
+  const themeColors = Colors[theme];
   const [value, setValue] = React.useState(user?.bio || '');
   const [loading, setLoading] = React.useState(false);
 
@@ -33,32 +37,32 @@ export default function BioScreen() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={[styles.container, { paddingTop: Math.max(insets.top, 20) }]}>
-        <StatusBar style="light" />
+      <View style={[styles.container, { backgroundColor: themeColors.background, paddingTop: Math.max(insets.top, 20) }]}>
+        <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
         <View style={styles.topBar}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={24} color="#c1ff72" />
+            <Ionicons name="chevron-back" size={24} color={themeColors.tint} />
           </TouchableOpacity>
-          <Text style={styles.topBarTitle}>Bio</Text>
+          <Text style={[styles.topBarTitle, { color: themeColors.subtext }]}>Bio</Text>
           <View style={styles.backButton} />
         </View>
         <View style={styles.content}>
           <TextInput 
-            style={[styles.textArea, { height: 120, paddingTop: 16 }]} 
+            style={[styles.textArea, { backgroundColor: themeColors.card, color: themeColors.text, height: 120, paddingTop: 16 }]} 
             value={value} 
             onChangeText={setValue} 
             placeholder="Tell us about yourself..." 
-            placeholderTextColor="#999" 
+            placeholderTextColor={themeColors.subtext} 
             multiline 
             textAlignVertical="top" 
           />
           <TouchableOpacity 
-            style={[styles.updateButton, loading && { opacity: 0.7 }]} 
+            style={[styles.updateButton, { backgroundColor: themeColors.tint }, loading && { opacity: 0.7 }]} 
             onPress={handleUpdate}
             disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator color="#1e2126" />
+              <ActivityIndicator color="#fff" />
             ) : (
               <Text style={styles.updateButtonText}>Update</Text>
             )}
@@ -70,12 +74,12 @@ export default function BioScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1e2126' },
+  container: { flex: 1 },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 16 },
   backButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  topBarTitle: { color: '#fff', fontSize: 15, fontFamily: 'Roboto', opacity: 0.7, letterSpacing: 0.5 },
+  topBarTitle: { fontSize: 15, fontFamily: 'Roboto', letterSpacing: 0.5 },
   content: { paddingHorizontal: 24, paddingTop: 16, gap: 16 },
-  textArea: { backgroundColor: '#38383d', borderRadius: 12, minHeight: 160, padding: 16, color: '#fff', fontSize: 15, fontFamily: 'Roboto' },
-  updateButton: { backgroundColor: '#c1ff72', borderRadius: 12, height: 56, alignItems: 'center', justifyContent: 'center' },
-  updateButtonText: { color: '#1e2126', fontSize: 18, fontFamily: 'Roboto-Bold' },
+  textArea: { borderRadius: 12, minHeight: 160, padding: 16, fontSize: 15, fontFamily: 'Roboto' },
+  updateButton: { borderRadius: 12, height: 56, alignItems: 'center', justifyContent: 'center' },
+  updateButtonText: { color: '#fff', fontSize: 18, fontFamily: 'Roboto-Bold' },
 });

@@ -9,12 +9,16 @@ import api from '@/utils/api';
 import { useAuthStore } from '@/store/authStore';
 import { useAlertStore } from '@/store/alertStore';
 import { ActivityIndicator } from 'react-native';
+import { useThemeStore } from '@/store/themeStore';
+import { Colors } from '@/constants/theme';
 
 export default function SocialUrlScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, updateUser } = useAuthStore();
   const showAlert = useAlertStore(state => state.showAlert);
+  const { theme } = useThemeStore();
+  const themeColors = Colors[theme];
   
   const [url1, setUrl1] = React.useState(user?.socialLinks?.[0]?.url || 'https://');
   const [url2, setUrl2] = React.useState(user?.socialLinks?.[1]?.url || 'https://');
@@ -49,28 +53,28 @@ export default function SocialUrlScreen() {
           {/* Header */}
           <View style={styles.topBar}>
             <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-              <Ionicons name="chevron-back" size={24} color="#c1ff72" />
+              <Ionicons name="chevron-back" size={24} color={themeColors.tint} />
             </TouchableOpacity>
-            <Text style={styles.topBarTitle}>Social Url</Text>
+            <Text style={[styles.topBarTitle, { color: themeColors.subtext }]}>Social Url</Text>
             <View style={styles.backButton} />
           </View>
 
           {/* Inputs */}
           <View style={styles.content}>
-            <TextInput style={[styles.input, styles.inputActive]} value={url1} onChangeText={setUrl1} placeholderTextColor="#999" keyboardType="url" autoCapitalize="none" />
-            <TextInput style={styles.input} value={url2} onChangeText={setUrl2} placeholderTextColor="#999" keyboardType="url" autoCapitalize="none" />
-            <TextInput style={styles.input} value={url3} onChangeText={setUrl3} placeholderTextColor="#999" keyboardType="url" autoCapitalize="none" returnKeyType="done" onSubmitEditing={Keyboard.dismiss} />
+            <TextInput style={[styles.input, { backgroundColor: themeColors.card, color: themeColors.text }, styles.inputActive, { borderColor: themeColors.tint }]} value={url1} onChangeText={setUrl1} placeholderTextColor={themeColors.subtext} keyboardType="url" autoCapitalize="none" />
+            <TextInput style={[styles.input, { backgroundColor: themeColors.card, color: themeColors.text }]} value={url2} onChangeText={setUrl2} placeholderTextColor={themeColors.subtext} keyboardType="url" autoCapitalize="none" />
+            <TextInput style={[styles.input, { backgroundColor: themeColors.card, color: themeColors.text }]} value={url3} onChangeText={setUrl3} placeholderTextColor={themeColors.subtext} keyboardType="url" autoCapitalize="none" returnKeyType="done" onSubmitEditing={Keyboard.dismiss} />
           </View>
 
           {/* Update Button */}
           <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
             <TouchableOpacity 
-              style={[styles.updateButton, loading && { opacity: 0.7 }]} 
+              style={[styles.updateButton, { backgroundColor: themeColors.tint }, loading && { opacity: 0.7 }]} 
               onPress={handleUpdate}
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color="#1e2126" />
+                <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={styles.updateButtonText}>Update</Text>
               )}
@@ -83,14 +87,14 @@ export default function SocialUrlScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1e2126' },
+  container: { flex: 1 },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 16 },
   backButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  topBarTitle: { color: '#fff', fontSize: 15, fontFamily: 'Roboto', opacity: 0.7, letterSpacing: 0.5 },
+  topBarTitle: { fontSize: 15, fontFamily: 'Roboto', letterSpacing: 0.5 },
   content: { paddingHorizontal: 24, paddingTop: 16, gap: 16, flex: 1 },
-  input: { backgroundColor: '#38383d', borderRadius: 12, height: 56, paddingHorizontal: 16, color: '#fff', fontSize: 15, fontFamily: 'Roboto' },
+  input: { borderRadius: 12, height: 56, paddingHorizontal: 16, fontSize: 15, fontFamily: 'Roboto' },
   inputActive: { borderWidth: 1.5, borderColor: '#7b5af5' },
-  footer: { paddingHorizontal: 24, paddingTop: 12, backgroundColor: '#1e2126' },
-  updateButton: { backgroundColor: '#c1ff72', borderRadius: 12, height: 56, alignItems: 'center', justifyContent: 'center' },
-  updateButtonText: { color: '#1e2126', fontSize: 18, fontFamily: 'Roboto-Bold' },
+  footer: { paddingHorizontal: 24, paddingTop: 12 },
+  updateButton: { borderRadius: 12, height: 56, alignItems: 'center', justifyContent: 'center' },
+  updateButtonText: { color: '#fff', fontSize: 18, fontFamily: 'Roboto-Bold' },
 });

@@ -1,7 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || "";
-const genAI = new GoogleGenerativeAI(apiKey);
 
 /**
  * generateAgriAdvice
@@ -13,8 +12,6 @@ export const generateAgriAdvice = async (factSheet: any, type: 'CROP' | 'ANIMAL'
   if (!apiKey) return "AI Key not configured.";
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }); 
-
     const prompt = `
       You are an expert ${type === 'CROP' ? 'Agronomist' : 'Veterinary Scientist'} for Terra Oracle.
       Based on the following Fact Sheet (JSON), provide a professional advisory for the farmer.
@@ -31,12 +28,42 @@ export const generateAgriAdvice = async (factSheet: any, type: 'CROP' | 'ANIMAL'
       ${JSON.stringify(factSheet, null, 2)}
     `;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    // Using standard fetch instead of the SDK to avoid React Native APK polyfill issues
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
     
-    // Safety check: Strip any remaining asterisks or double-asterisks
-    return text.replace(/\*/g, '').trim();
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: prompt
+              }
+            ]
+          }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP Error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+        const text = data.candidates[0].content.parts[0].text;
+        // Safety check: Strip any remaining asterisks or double-asterisks
+        return text.replace(/\*/g, '').trim();
+    } else {
+        throw new Error("Invalid response structure from Gemini API");
+    }
+
   } catch (error) {
     console.error("Gemini Error:", error);
     return "The AI Oracle is currently resting. Please check the raw data below.";

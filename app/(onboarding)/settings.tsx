@@ -5,6 +5,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/authStore';
+import { useThemeStore } from '@/store/themeStore';
+import { Colors } from '@/constants/theme';
 
 interface SettingsItemProps {
   icon: string;
@@ -14,16 +16,18 @@ interface SettingsItemProps {
 }
 
 function SettingsItem({ icon, title, description, onPress }: SettingsItemProps) {
+  const { theme } = useThemeStore();
+  const themeColors = Colors[theme];
   return (
     <TouchableOpacity style={styles.itemContainer} onPress={onPress}>
       <View style={styles.iconContainer}>
-        <Ionicons name={icon as any} size={22} color="#c1ff72" />
+        <Ionicons name={icon as any} size={22} color={themeColors.tint} />
       </View>
       <View style={styles.textContainer}>
-        <Text style={styles.itemTitle}>{title}</Text>
-        <Text style={styles.itemDescription}>{description}</Text>
+        <Text style={[styles.itemTitle, { color: themeColors.text }]}>{title}</Text>
+        <Text style={[styles.itemDescription, { color: themeColors.subtext }]}>{description}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={16} color="#444" />
+      <Ionicons name="chevron-forward" size={16} color={themeColors.border} />
     </TouchableOpacity>
   );
 }
@@ -32,27 +36,29 @@ export default function SettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const clearAuth = useAuthStore(state => state.clearAuth);
+  const { theme } = useThemeStore();
+  const themeColors = Colors[theme];
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar style="light" />
+    <View style={[styles.container, { backgroundColor: themeColors.background, paddingTop: insets.top }]}>
+      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
 
       {/* ── Header ── */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#c1ff72" />
+          <Ionicons name="arrow-back" size={24} color={themeColors.tint} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={[styles.headerTitle, { color: themeColors.text }]}>Settings</Text>
       </View>
 
       {/* ── Search Bar ── */}
       <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={18} color="#999" style={styles.searchIcon} />
+        <View style={[styles.searchBar, { backgroundColor: themeColors.card, borderColor: themeColors.border }]}>
+          <Ionicons name="search" size={18} color={themeColors.subtext} style={styles.searchIcon} />
           <TextInput 
-            style={styles.searchInput} 
+            style={[styles.searchInput, { color: themeColors.text }]} 
             placeholder="Search settings" 
-            placeholderTextColor="#64748b"
+            placeholderTextColor={themeColors.subtext}
           />
         </View>
       </View>
@@ -119,7 +125,7 @@ export default function SettingsScreen() {
           </View>
           <View style={styles.textContainer}>
             <Text style={[styles.itemTitle, { color: '#ff5a5a' }]}>Log out</Text>
-            <Text style={styles.itemDescription}>Sign out of your account.</Text>
+            <Text style={[styles.itemDescription, { color: themeColors.subtext }]}>Sign out of your account.</Text>
           </View>
         </TouchableOpacity>
 
@@ -129,7 +135,7 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1e2126' },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -137,7 +143,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   backButton: { marginRight: 24 },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold' },
   
   searchContainer: {
     paddingHorizontal: 16,
@@ -146,17 +152,14 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2a2d34',
     borderRadius: 20,
     paddingHorizontal: 16,
     height: 40,
     borderWidth: 1,
-    borderColor: '#38383d',
   },
   searchIcon: { marginRight: 10 },
   searchInput: {
     flex: 1,
-    color: '#fff',
     fontSize: 15,
   },
 
@@ -176,13 +179,11 @@ const styles = StyleSheet.create({
     paddingRight: 10,
   },
   itemTitle: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
   },
   itemDescription: {
-    color: '#94a3b8',
     fontSize: 13,
     lineHeight: 18,
   },

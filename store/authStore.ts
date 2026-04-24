@@ -12,6 +12,7 @@ interface User {
   avatarUrl?: string;
   farmTypeId?: string;
   socialLinks?: Array<{ platform: string; url: string }>;
+  referralCode?: string;
   createdAt?: string;
 }
 

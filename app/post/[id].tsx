@@ -1,16 +1,21 @@
 import React from 'react';
-import { StyleSheet, View, Text, Image, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform, Share } from 'react-native';
+import { StyleSheet, View, Text, Image, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform, Share, Dimensions, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
 import api from '../../utils/api';
 import UserPreviewModal from '../../components/UserPreviewModal';
 import { useAlertStore } from '../../store/alertStore';
+import { useThemeStore } from '../../store/themeStore';
+import { Colors } from '../../constants/theme';
+import { useAuthStore } from '../../store/authStore';
 
 export default function PostDetailScreen() {
-  const { id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const postId = id;
   const router = useRouter();
   const insets = useSafeAreaInsets();
   
@@ -22,17 +27,19 @@ export default function PostDetailScreen() {
   const [selectedUserId, setSelectedUserId] = React.useState<string | null>(null);
   const [isPreviewVisible, setIsPreviewVisible] = React.useState(false);
   const { showAlert } = useAlertStore();
+  const { theme } = useThemeStore();
+  const themeColors = Colors[theme];
 
   React.useEffect(() => {
-    if (id) {
+    if (postId) {
       fetchPost();
       fetchComments();
     }
-  }, [id]);
+  }, [postId]);
 
   const fetchPost = async () => {
     try {
-      const response = await api.get(`/posts/${id}`);
+      const response = await api.get(`/posts/${postId}`);
       if (response.data.success) {
         setPost(response.data.data);
       }
@@ -45,7 +52,7 @@ export default function PostDetailScreen() {
 
   const fetchComments = async () => {
     try {
-      const response = await api.get(`/posts/${id}/comments`);
+      const response = await api.get(`/posts/${postId}/comments`);
       if (response.data.success) {
         setComments(response.data.data);
       }
@@ -60,6 +67,7 @@ export default function PostDetailScreen() {
     if (!post || liking) return;
     try {
       setLiking(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const isLiked = post.likes && post.likes.length > 0;
       setPost({
         ...post,
@@ -69,7 +77,7 @@ export default function PostDetailScreen() {
         },
         likes: isLiked ? [] : [{ id: 'temp' }]
       });
-      await api.post(`/posts/${id}/like`);
+      await api.post(`/posts/${postId}/like`);
     } catch (error) {
       console.error('Failed to toggle like:', error);
     } finally {
@@ -81,7 +89,7 @@ export default function PostDetailScreen() {
     if (!newComment.trim()) return;
     try {
       setPostingComment(true);
-      const response = await api.post(`/posts/${id}/comments`, { content: newComment });
+      const response = await api.post(`/posts/${postId}/comments`, { content: newComment });
       if (response.data.success) {
         setComments([response.data.data, ...comments]);
         setPost({
@@ -101,29 +109,44 @@ export default function PostDetailScreen() {
 
   const handleShare = async () => {
     try {
+      Haptics.selectionAsync();
       await Share.share({
         message: `Check out this update on Terra: "${post.content}"`,
-        url: post.imageUrl
+        url: post.imageUrls?.[0]
       });
     } catch (error) {
       console.error('Sharing failed:', error);
     }
   };
 
+  const handleDeletePost = async () => {
+    try {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      const res = await api.delete(`/posts/${postId}`);
+      if (res.data.success) {
+        showAlert('Post deleted', 'success');
+        router.back();
+      }
+    } catch (error) {
+      console.error('Failed to delete post:', error);
+      showAlert('Failed to delete post', 'error');
+    }
+  };
+
   if (loading) {
     return (
-      <View style={styles.errorContainer}>
-        <ActivityIndicator color="#c1ff72" />
+      <View style={[styles.errorContainer, { backgroundColor: themeColors.background }]}>
+        <ActivityIndicator color={themeColors.tint} />
       </View>
     );
   }
 
   if (!post) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Post not found</Text>
+      <View style={[styles.errorContainer, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.errorText, { color: themeColors.text }]}>Post not found</Text>
         <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backLink}>Go back</Text>
+          <Text style={[styles.backLink, { color: themeColors.tint }]}>Go back</Text>
         </TouchableOpacity>
       </View>
     );
@@ -132,17 +155,32 @@ export default function PostDetailScreen() {
   const isLiked = post.likes && post.likes.length > 0;
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
+      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
       
       {/* Header */}
-      <SafeAreaView edges={['top']} style={styles.headerContainer}>
+      <SafeAreaView edges={['top']} style={[styles.headerContainer, { backgroundColor: themeColors.background, borderBottomColor: themeColors.border }]}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={28} color="#c1ff72" />
+            <Ionicons name="chevron-back" size={28} color={themeColors.tint} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>post</Text>
-          <View style={{ width: 40 }} />
+          <Text style={[styles.headerTitle, { color: themeColors.text }]}>post</Text>
+          {post.userId === useAuthStore.getState().user?.id ? (
+            <TouchableOpacity onPress={() => {
+              Alert.alert(
+                'Delete Post',
+                'Are you sure you want to delete this update?',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Delete', style: 'destructive', onPress: handleDeletePost },
+                ]
+              );
+            }} style={styles.backButton}>
+              <Ionicons name="trash-outline" size={24} color="#f91880" />
+            </TouchableOpacity>
+          ) : (
+            <View style={{ width: 40 }} />
+          )}
         </View>
       </SafeAreaView>
 
@@ -158,12 +196,13 @@ export default function PostDetailScreen() {
           {/* Author */}
           <View style={styles.authorRow}>
             <TouchableOpacity onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setSelectedUserId(post.userId);
               setIsPreviewVisible(true);
             }}>
               <Image 
                 source={{ uri: post.user.avatarUrl || 'https://api.dicebear.com/7.x/identicon/png?seed=' + post.user.username }} 
-                style={styles.avatar} 
+                style={[styles.avatar, { backgroundColor: themeColors.card }]} 
               />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => {
@@ -171,65 +210,87 @@ export default function PostDetailScreen() {
               setIsPreviewVisible(true);
             }}>
               <View>
-                <Text style={styles.authorName}>{post.user.username || 'Anonymous'}</Text>
-                <Text style={styles.timeText}>{new Date(post.createdAt).toLocaleDateString()}</Text>
+                <Text style={[styles.authorName, { color: themeColors.text }]}>{post.user.username || 'Anonymous'}</Text>
+                <Text style={[styles.timeText, { color: themeColors.subtext }]}>{new Date(post.createdAt).toLocaleDateString()}</Text>
               </View>
             </TouchableOpacity>
           </View>
 
           {/* Content */}
-          <Text style={styles.content}>{post.content}</Text>
+          <Text style={[styles.content, { color: themeColors.text }]}>{post.content}</Text>
 
-          {/* Image */}
-          {post.imageUrl && (
-            <Image source={{ uri: post.imageUrl }} style={styles.postImage} resizeMode="cover" />
+          {/* Images Gallery */}
+          {post.imageUrls && post.imageUrls.length > 0 && (
+            <View style={styles.imageGalleryContainer}>
+              <ScrollView 
+                horizontal 
+                pagingEnabled 
+                showsHorizontalScrollIndicator={false}
+                style={styles.imageGallery}
+              >
+                {post.imageUrls.map((img: string, idx: number) => (
+                  <Image 
+                    key={idx} 
+                    source={{ uri: img }} 
+                    style={[styles.postImage, { width: Dimensions.get('window').width - 40, backgroundColor: themeColors.card }]} 
+                    resizeMode="cover" 
+                  />
+                ))}
+              </ScrollView>
+              {post.imageUrls.length > 1 && (
+                <View style={styles.paginationDot}>
+                  <Text style={styles.paginationText}>1/{post.imageUrls.length}</Text>
+                </View>
+              )}
+            </View>
           )}
 
           {/* Stats */}
           <View style={styles.statsRow}>
-            <Text style={styles.statText}><Text style={styles.statNumber}>{post._count?.likes || 0}</Text> likes</Text>
-            <Text style={styles.statText}><Text style={styles.statNumber}>{post._count?.comments || 0}</Text> comments</Text>
+            <Text style={[styles.statText, { color: themeColors.subtext }]}><Text style={[styles.statNumber, { color: themeColors.text }]}>{post._count?.likes || 0}</Text> likes</Text>
+            <Text style={[styles.statText, { color: themeColors.subtext }]}><Text style={[styles.statNumber, { color: themeColors.text }]}>{post._count?.comments || 0}</Text> comments</Text>
           </View>
 
           {/* Divider */}
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: themeColors.border }]} />
 
           {/* Interactions */}
           <View style={styles.actionRow}>
             <TouchableOpacity style={styles.actionButton} onPress={toggleLike}>
-              <Ionicons name={isLiked ? "heart" : "heart-outline"} size={24} color={isLiked ? "#ff4b4b" : "#94a3b8"} />
-              <Text style={[styles.actionText, isLiked && { color: '#ff4b4b' }]}>like</Text>
+              <Ionicons name={isLiked ? "heart" : "heart-outline"} size={24} color={isLiked ? "#f91880" : themeColors.subtext} />
+              <Text style={[styles.actionText, { color: isLiked ? '#f91880' : themeColors.subtext }]}>like</Text>
             </TouchableOpacity>
             
             <TouchableOpacity style={styles.actionButton}>
-              <Ionicons name="chatbubble-outline" size={22} color="#94a3b8" />
-              <Text style={styles.actionText}>comment</Text>
+              <Ionicons name="chatbubble-outline" size={22} color={themeColors.subtext} />
+              <Text style={[styles.actionText, { color: themeColors.subtext }]}>comment</Text>
             </TouchableOpacity>
             
             <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-              <Ionicons name="share-social-outline" size={24} color="#94a3b8" />
-              <Text style={styles.actionText}>share</Text>
+              <Ionicons name="share-social-outline" size={24} color={themeColors.subtext} />
+              <Text style={[styles.actionText, { color: themeColors.subtext }]}>share</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: themeColors.border }]} />
           
           {/* Comments List */}
           <View style={styles.commentsSection}>
-            <Text style={styles.sectionLabel}>comments ({post._count?.comments || 0})</Text>
+            <Text style={[styles.sectionLabel, { color: themeColors.text }]}>comments ({post._count?.comments || 0})</Text>
             
             {comments.length === 0 ? (
-              <Text style={styles.placeholderText}>no comments yet. be the first to share your thoughts!</Text>
+              <Text style={[styles.placeholderText, { color: themeColors.subtext }]}>no comments yet. be the first to share your thoughts!</Text>
             ) : (
               comments.map((comment: any) => (
-                <View key={comment.id} style={styles.commentItem}>
+                <View key={comment.id} style={[styles.commentItem, { borderBottomColor: themeColors.border }]}>
                   <TouchableOpacity onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setSelectedUserId(comment.userId);
                     setIsPreviewVisible(true);
                   }}>
                     <Image 
                       source={{ uri: comment.user.avatarUrl || 'https://api.dicebear.com/7.x/identicon/png?seed=' + comment.user.username }} 
-                      style={styles.commentAvatar} 
+                      style={[styles.commentAvatar, { backgroundColor: themeColors.card }]} 
                     />
                   </TouchableOpacity>
                   <View style={styles.commentContent}>
@@ -238,11 +299,11 @@ export default function PostDetailScreen() {
                         setSelectedUserId(comment.userId);
                         setIsPreviewVisible(true);
                       }}>
-                        <Text style={styles.commentUser}>{comment.user.username}</Text>
+                        <Text style={[styles.commentUser, { color: themeColors.text }]}>{comment.user.username}</Text>
                       </TouchableOpacity>
-                      <Text style={styles.commentTime}>{new Date(comment.createdAt).toLocaleDateString()}</Text>
+                      <Text style={[styles.commentTime, { color: themeColors.subtext }]}>{new Date(comment.createdAt).toLocaleDateString()}</Text>
                     </View>
-                    <Text style={styles.commentText}>{comment.content}</Text>
+                    <Text style={[styles.commentText, { color: themeColors.text }]}>{comment.content}</Text>
                   </View>
                 </View>
               ))
@@ -253,12 +314,16 @@ export default function PostDetailScreen() {
         {/* Comment Input Bar */}
         <View style={[
           styles.inputBar, 
-          { paddingBottom: insets.bottom > 0 ? insets.bottom : 16 }
+          { 
+            paddingBottom: insets.bottom > 0 ? insets.bottom : 16,
+            backgroundColor: themeColors.background,
+            borderTopColor: themeColors.border
+          }
         ]}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: themeColors.text }]}
             placeholder="add a comment..."
-            placeholderTextColor="#64748b"
+            placeholderTextColor={themeColors.subtext}
             value={newComment}
             onChangeText={setNewComment}
             multiline
@@ -269,9 +334,9 @@ export default function PostDetailScreen() {
             style={styles.sendButton}
           >
             {postingComment ? (
-              <ActivityIndicator size="small" color="#c1ff72" />
+              <ActivityIndicator size="small" color={themeColors.tint} />
             ) : (
-              <Ionicons name="send" size={20} color={newComment.trim() ? "#c1ff72" : "#38383d"} />
+              <Ionicons name="send" size={20} color={newComment.trim() ? themeColors.tint : themeColors.border} />
             )}
           </TouchableOpacity>
         </View>
@@ -287,8 +352,8 @@ export default function PostDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1e2126' },
-  headerContainer: { backgroundColor: '#1e2126', borderBottomWidth: 1, borderBottomColor: '#2a2d34' },
+  container: { flex: 1 },
+  headerContainer: { borderBottomWidth: 0.5 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -297,51 +362,69 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   backButton: { padding: 4 },
-  headerTitle: { color: '#fff', fontSize: 18, fontFamily: 'Roboto-Bold', textTransform: 'lowercase' },
+  headerTitle: { fontSize: 18, fontFamily: 'Roboto-Bold', textTransform: 'lowercase' },
   scrollContent: { padding: 20 },
   authorRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 },
-  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#38383d' },
-  authorName: { color: '#fff', fontSize: 16, fontFamily: 'Roboto-Bold' },
-  timeText: { color: '#64748b', fontSize: 13, fontFamily: 'Roboto' },
-  content: { color: '#e2e8f0', fontSize: 18, lineHeight: 28, fontFamily: 'Roboto', marginBottom: 20 },
-  postImage: { width: '100%', height: 300, borderRadius: 12, marginBottom: 20, backgroundColor: '#2a2d34' },
+  avatar: { width: 44, height: 44, borderRadius: 22 },
+  authorName: { fontSize: 16, fontFamily: 'Roboto-Bold' },
+  timeText: { fontSize: 13, fontFamily: 'Roboto' },
+  content: { fontSize: 18, lineHeight: 28, fontFamily: 'Roboto', marginBottom: 20 },
+  imageGalleryContainer: {
+    position: 'relative',
+    marginBottom: 20,
+  },
+  imageGallery: {
+    borderRadius: 12,
+  },
+  postImage: { height: 300, borderRadius: 12 },
+  paginationDot: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  paginationText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+  },
   statsRow: { flexDirection: 'row', gap: 16, marginBottom: 16 },
-  statText: { color: '#64748b', fontSize: 14, fontFamily: 'Roboto' },
-  statNumber: { color: '#fff', fontWeight: 'bold' },
-  divider: { height: 1, backgroundColor: '#2a2d34', width: '100%' },
+  statText: { fontSize: 14, fontFamily: 'Roboto' },
+  statNumber: { fontWeight: 'bold' },
+  divider: { height: 0.5, width: '100%' },
   actionRow: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 12 },
   actionButton: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  actionText: { color: '#94a3b8', fontSize: 14, fontFamily: 'Roboto-Bold' },
+  actionText: { fontSize: 14, fontFamily: 'Roboto-Bold' },
   commentsSection: { paddingVertical: 20 },
-  sectionLabel: { color: '#fff', fontSize: 16, fontFamily: 'Roboto-Bold', marginBottom: 20, textTransform: 'lowercase' },
+  sectionLabel: { fontSize: 16, fontFamily: 'Roboto-Bold', marginBottom: 20, textTransform: 'lowercase' },
   commentItem: { 
     flexDirection: 'row', 
     gap: 12, 
     paddingVertical: 14,
     paddingHorizontal: 20,
     marginHorizontal: -20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2a2d34',
+    borderBottomWidth: 0.5,
   },
-  commentAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#38383d' },
+  commentAvatar: { width: 36, height: 36, borderRadius: 18 },
   commentContent: { flex: 1 },
   commentHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  commentUser: { color: '#fff', fontSize: 13, fontFamily: 'Roboto-Bold' },
-  commentTime: { color: '#64748b', fontSize: 11 },
-  commentText: { color: '#e2e8f0', fontSize: 14, lineHeight: 20 },
-  placeholderText: { color: '#64748b', fontSize: 14, fontFamily: 'Roboto', textAlign: 'center', marginTop: 20 },
+  commentUser: { fontSize: 13, fontFamily: 'Roboto-Bold' },
+  commentTime: { fontSize: 11 },
+  commentText: { fontSize: 14, lineHeight: 20 },
+  placeholderText: { fontSize: 14, fontFamily: 'Roboto', textAlign: 'center', marginTop: 20 },
   inputBar: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#2a2d34',
-    backgroundColor: '#1e2126',
   },
-  input: { flex: 1, color: '#fff', fontSize: 15, maxHeight: 100, paddingVertical: 8 },
+  input: { flex: 1, fontSize: 15, maxHeight: 100, paddingVertical: 8 },
   sendButton: { padding: 8 },
-  errorContainer: { flex: 1, backgroundColor: '#1e2126', alignItems: 'center', justifyContent: 'center', gap: 12 },
-  errorText: { color: '#fff', fontSize: 16 },
-  backLink: { color: '#c1ff72', fontSize: 14 },
+  errorContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  errorText: { fontSize: 16 },
+  backLink: { fontSize: 14 },
 });

@@ -9,6 +9,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '@/utils/api';
 import { useAuthStore } from '@/store/authStore';
 import { useAlertStore } from '@/store/alertStore';
+import { useThemeStore } from '@/store/themeStore';
+import { Colors } from '@/constants/theme';
 import { ActivityIndicator } from 'react-native';
 import { handleGoogleSignIn } from '@/utils/google-auth';
 
@@ -18,6 +20,8 @@ export default function LoginScreen() {
   const setAuth = useAuthStore(state => state.setAuth);
   const showAlert = useAlertStore(state => state.showAlert);
   const [errorField, setErrorField] = useState<string | null>(null);
+  const { theme } = useThemeStore();
+  const themeColors = Colors[theme];
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -69,12 +73,12 @@ export default function LoginScreen() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.container}>
-        <StatusBar style="light" />
+      <View style={[styles.container, { backgroundColor: themeColors.background }]}>
+        <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
 
         {/* ── Fixed Header ── */}
-        <View style={[styles.header, { paddingTop: Math.max(insets.top, 40) }]}>
-          <ThemedText style={styles.logoText}>Terra</ThemedText>
+        <View style={[styles.header, { backgroundColor: themeColors.background, paddingTop: Math.max(insets.top, 40) }]}>
+          <ThemedText style={[styles.logoText, { color: themeColors.text }]}>Terra</ThemedText>
         </View>
 
         <KeyboardAvoidingView
@@ -89,7 +93,7 @@ export default function LoginScreen() {
             {/* Sign Up link */}
             <View style={styles.formHeader}>
               <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
-                <Text style={styles.signUpText}>Sign Up</Text>
+                <Text style={[styles.signUpText, { color: themeColors.tint }]}>Sign Up</Text>
               </TouchableOpacity>
             </View>
 
@@ -97,10 +101,11 @@ export default function LoginScreen() {
               <TextInput
                 style={[
                   styles.input, 
+                  { backgroundColor: themeColors.card, color: themeColors.text, borderColor: themeColors.border },
                   (errorField === 'email' || errorField === 'both') && { borderColor: '#ff5a5a', borderWidth: 1 }
                 ]}
                 placeholder="Email"
-                placeholderTextColor="#999"
+                placeholderTextColor={themeColors.subtext}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 returnKeyType="next"
@@ -112,12 +117,13 @@ export default function LoginScreen() {
               />
               <View style={[
                 styles.passwordContainer,
+                { backgroundColor: themeColors.card, borderColor: themeColors.border },
                 (errorField === 'password' || errorField === 'both') && { borderColor: '#ff5a5a', borderWidth: 1 }
               ]}>
                 <TextInput
-                  style={[styles.input, { flex: 1, backgroundColor: 'transparent' }]}
+                  style={[styles.input, { flex: 1, backgroundColor: 'transparent', borderWidth: 0, color: themeColors.text }]}
                   placeholder="Password"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={themeColors.subtext}
                   secureTextEntry={!showPassword}
                   returnKeyType="done"
                   value={password}
@@ -128,53 +134,53 @@ export default function LoginScreen() {
                   onSubmitEditing={handleLogin}
                 />
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-                  <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={22} color="#999" />
+                  <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={22} color={themeColors.subtext} />
                 </TouchableOpacity>
               </View>
             </View>
 
             <TouchableOpacity 
-              style={[styles.loginButton, loading && { opacity: 0.7 }]} 
+              style={[styles.loginButton, { backgroundColor: themeColors.tint }, loading && { opacity: 0.7 }]} 
               onPress={handleLogin}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#1e2126" />
-              ) : (
-                <Text style={styles.loginButtonText}>Login to Continue</Text>
-              )}
-            </TouchableOpacity>
-
-            <Text style={styles.orText}>Or</Text>
-
-            <TouchableOpacity 
-              style={styles.googleButton} 
-              onPress={() => handleGoogleSignIn(setAuth, router, showAlert, setLoading)}
               disabled={loading}
             >
               {loading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.googleButtonText}>Continue With Google</Text>
+                <Text style={styles.loginButtonText}>Login to Continue</Text>
+              )}
+            </TouchableOpacity>
+
+            <Text style={[styles.orText, { color: themeColors.text }]}>Or</Text>
+
+            <TouchableOpacity 
+              style={[styles.googleButton, { backgroundColor: themeColors.card, borderColor: themeColors.border }]} 
+              onPress={() => handleGoogleSignIn(setAuth, router, showAlert, setLoading)}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color={themeColors.text} />
+              ) : (
+                <Text style={[styles.googleButtonText, { color: themeColors.text }]}>Continue With Google</Text>
               )}
             </TouchableOpacity>
           </ScrollView>
         </KeyboardAvoidingView>
 
         {/* ── Fixed Footer ── */}
-        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+        <View style={[styles.footer, { backgroundColor: themeColors.background, paddingBottom: Math.max(insets.bottom, 20) }]}>
           <TouchableOpacity onPress={() => setShowTerms(true)}>
-            <Text style={styles.privacyText}>Terms and Conditions</Text>
+            <Text style={[styles.privacyText, { color: themeColors.subtext }]}>Terms and Conditions</Text>
           </TouchableOpacity>
         </View>
 
         {/* ── Terms Modal ── */}
         <Modal visible={showTerms} transparent animationType="fade">
-          <View style={[styles.modalOverlay, { paddingTop: insets.top }]}>
-            <View style={styles.modalContent}>
+          <View style={[styles.modalOverlay, { backgroundColor: themeColors.background, paddingTop: insets.top }]}>
+            <View style={[styles.modalContent, { backgroundColor: themeColors.background }]}>
               <ScrollView>
-                <Text style={styles.modalTitle}>Terms and Conditions</Text>
-                <Text style={styles.modalText}>
+                <Text style={[styles.modalTitle, { color: themeColors.text }]}>Terms and Conditions</Text>
+                <Text style={[styles.modalText, { color: themeColors.text }]}>
                   1. Acceptance of Terms{"\n"}
                   By accessing and using Terra, you accept and agree to be bound by the terms and provision of this agreement.{"\n\n"}
                   2. User License{"\n"}
@@ -185,8 +191,8 @@ export default function LoginScreen() {
                   In no event shall Terra or its suppliers be liable for any damages arising out of the use or inability to use the materials.
                 </Text>
               </ScrollView>
-              <TouchableOpacity style={styles.closeModalButton} onPress={() => setShowTerms(false)}>
-                <Text style={styles.closeModalText}>Close</Text>
+              <TouchableOpacity style={[styles.closeModalButton, { backgroundColor: themeColors.card, borderColor: themeColors.border }]} onPress={() => setShowTerms(false)}>
+                <Text style={[styles.closeModalText, { color: themeColors.text }]}>Close</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -197,28 +203,28 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1e2126' },
-  header: { alignItems: 'center', paddingBottom: 32, backgroundColor: '#1e2126' },
-  logoText: { fontSize: 80, lineHeight: 90, fontFamily: 'Roboto-Bold', color: '#fff', textAlign: 'center', letterSpacing: -2 },
+  container: { flex: 1 },
+  header: { alignItems: 'center', paddingBottom: 32 },
+  logoText: { fontSize: 80, lineHeight: 90, fontFamily: 'Roboto-Bold', textAlign: 'center', letterSpacing: -2 },
   keyboardView: { flex: 1 },
   scrollContent: { flexGrow: 1, paddingHorizontal: 24 },
   formHeader: { alignItems: 'flex-end', marginBottom: 20 },
-  signUpText: { color: '#c1ff72', fontFamily: 'Roboto-Bold', fontSize: 14 },
+  signUpText: { fontFamily: 'Roboto-Bold', fontSize: 14 },
   inputContainer: { gap: 16, marginBottom: 24 },
-  passwordContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#38383d', borderRadius: 16, height: 60, paddingRight: 16 },
+  passwordContainer: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, height: 60, paddingRight: 16, borderWidth: 1 },
   eyeIcon: { padding: 4 },
-  input: { backgroundColor: '#38383d', borderRadius: 16, height: 60, paddingLeft: 20, paddingRight: 20, color: '#fff', fontSize: 14, fontFamily: 'Roboto' },
-  loginButton: { backgroundColor: '#c1ff72', borderRadius: 16, height: 60, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  loginButtonText: { color: '#1e2126', fontSize: 18, fontFamily: 'Roboto-Bold' },
-  orText: { color: '#fff', textAlign: 'center', marginBottom: 16, fontFamily: 'Roboto', opacity: 0.8 },
-  googleButton: { backgroundColor: '#38383d', borderRadius: 30, height: 60, alignItems: 'center', justifyContent: 'center' },
-  googleButtonText: { color: '#fff', fontSize: 16, fontFamily: 'Roboto-Bold' },
-  footer: { alignItems: 'center', paddingTop: 16, backgroundColor: '#1e2126' },
-  privacyText: { color: '#999', fontSize: 14, fontFamily: 'Roboto', textDecorationLine: 'underline' },
-  modalOverlay: { flex: 1, backgroundColor: '#1e2126' },
-  modalContent: { backgroundColor: '#1e2126', flex: 1, padding: 24 },
-  modalTitle: { color: '#fff', fontSize: 18, fontFamily: 'Roboto-Bold', marginBottom: 16 },
-  modalText: { color: '#fff', fontSize: 14, fontFamily: 'Roboto', opacity: 0.8, lineHeight: 22 },
-  closeModalButton: { marginTop: 24, backgroundColor: '#38383d', paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
-  closeModalText: { color: '#fff', fontSize: 16, fontFamily: 'Roboto-Bold' },
+  input: { borderRadius: 16, height: 60, paddingLeft: 20, paddingRight: 20, fontSize: 14, fontFamily: 'Roboto', borderWidth: 1 },
+  loginButton: { borderRadius: 16, height: 60, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  loginButtonText: { color: '#fff', fontSize: 18, fontFamily: 'Roboto-Bold' },
+  orText: { textAlign: 'center', marginBottom: 16, fontFamily: 'Roboto', opacity: 0.8 },
+  googleButton: { borderRadius: 30, height: 60, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  googleButtonText: { fontSize: 16, fontFamily: 'Roboto-Bold' },
+  footer: { alignItems: 'center', paddingTop: 16 },
+  privacyText: { fontSize: 14, fontFamily: 'Roboto', textDecorationLine: 'underline' },
+  modalOverlay: { flex: 1 },
+  modalContent: { flex: 1, padding: 24 },
+  modalTitle: { fontSize: 18, fontFamily: 'Roboto-Bold', marginBottom: 16 },
+  modalText: { fontSize: 14, fontFamily: 'Roboto', opacity: 0.8, lineHeight: 22 },
+  closeModalButton: { marginTop: 24, paddingVertical: 12, borderRadius: 12, alignItems: 'center', borderWidth: 1 },
+  closeModalText: { fontSize: 16, fontFamily: 'Roboto-Bold' },
 });

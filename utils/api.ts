@@ -3,9 +3,7 @@ import { Platform } from 'react-native';
 import { useAuthStore } from '../store/authStore';
 
 // Automatic switcher: Uses Local IP for development, Render for production
-const BASE_URL = __DEV__
-  ? 'http://10.182.113.245:4000/api' 
-  : 'https://server-sr85.onrender.com/api';
+export const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.126.36.245:4000/api';
 
 const api = axios.create({
   baseURL: BASE_URL,

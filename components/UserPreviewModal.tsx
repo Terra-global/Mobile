@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, Image, TouchableOpacity, Modal, ActivityIndicator, Pressable, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
 import api from '../utils/api';
+
+import { useLoadingStore } from '../store/loadingStore';
+import { useThemeStore } from '../store/themeStore';
+import { Colors } from '../constants/theme';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -20,6 +25,8 @@ export default function UserPreviewModal({ userId, isVisible, onClose }: UserPre
   const [loading, setLoading] = useState(true);
   const [following, setFollowing] = useState(false);
   const [processingFollow, setProcessingFollow] = useState(false);
+  const { theme } = useThemeStore();
+  const themeColors = Colors[theme];
 
   useEffect(() => {
     if (isVisible && userId) {
@@ -49,6 +56,7 @@ export default function UserPreviewModal({ userId, isVisible, onClose }: UserPre
     
     try {
       setProcessingFollow(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const res = await api.post(`/users/follow/${userId}`);
       if (res.data.success) {
         setFollowing(res.data.data.following);
@@ -71,6 +79,7 @@ export default function UserPreviewModal({ userId, isVisible, onClose }: UserPre
   };
 
   const viewFullProfile = () => {
+    Haptics.selectionAsync();
     onClose();
     router.push({
       pathname: '/profile',
@@ -88,12 +97,12 @@ export default function UserPreviewModal({ userId, isVisible, onClose }: UserPre
       onRequestClose={onClose}
     >
       <Pressable style={styles.backdrop} onPress={onClose} />
-      <View style={styles.modalContent}>
-        <View style={styles.handle} />
+      <View style={[styles.modalContent, { backgroundColor: themeColors.background, borderTopColor: themeColors.border, borderTopWidth: 0.5 }]}>
+        <View style={[styles.handle, { backgroundColor: themeColors.border }]} />
         
         {loading ? (
           <View style={styles.loadingBox}>
-            <ActivityIndicator color="#c1ff72" size="large" />
+            <ActivityIndicator color={themeColors.tint} size="large" />
           </View>
         ) : (
           <View style={styles.profileContainer}>
@@ -103,43 +112,62 @@ export default function UserPreviewModal({ userId, isVisible, onClose }: UserPre
                 style={styles.avatar} 
               />
               <View style={styles.headerText}>
-                <Text style={styles.name}>{profile?.username}</Text>
-                <Text style={styles.handleText}>@{profile?.username?.toLowerCase()}</Text>
+                <Text style={[styles.name, { color: themeColors.text }]}>{profile?.username}</Text>
+                <Text style={[styles.handleText, { color: themeColors.subtext }]}>@{profile?.username?.toLowerCase()}</Text>
               </View>
             </View>
 
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{profile?._count?.followers || 0}</Text>
-                <Text style={styles.statLabel}>Followers</Text>
+                <Text style={[styles.statNumber, { color: themeColors.text }]}>{profile?._count?.followers || 0}</Text>
+                <Text style={[styles.statLabel, { color: themeColors.subtext }]}>followers</Text>
               </View>
               <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{profile?._count?.following || 0}</Text>
-                <Text style={styles.statLabel}>Following</Text>
+                <Text style={[styles.statNumber, { color: themeColors.text }]}>{profile?._count?.following || 0}</Text>
+                <Text style={[styles.statLabel, { color: themeColors.subtext }]}>following</Text>
               </View>
               <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{profile?._count?.posts || 0}</Text>
-                <Text style={styles.statLabel}>Posts</Text>
+                <Text style={[styles.statNumber, { color: themeColors.text }]}>{profile?._count?.posts || 0}</Text>
+                <Text style={[styles.statLabel, { color: themeColors.subtext }]}>posts</Text>
               </View>
             </View>
 
-            {profile?.bio && <Text style={styles.bio} numberOfLines={2}>{profile.bio}</Text>}
+            {profile?.bio && <Text style={[styles.bio, { color: themeColors.text }]} numberOfLines={2}>{profile.bio}</Text>}
 
             <View style={styles.actions}>
               {currentUser?.id !== userId && (
                 <TouchableOpacity 
-                  style={[styles.button, following ? styles.unfollowButton : styles.followButton]}
+                  style={[
+                    styles.button, 
+                    following ? styles.unfollowButton : styles.followButton, 
+                    { 
+                      backgroundColor: following ? 'transparent' : themeColors.tint, 
+                      borderColor: following ? themeColors.border : themeColors.tint 
+                    }
+                  ]}
                   onPress={handleFollow}
                   disabled={processingFollow}
+                  activeOpacity={0.8}
                 >
-                  <Text style={[styles.buttonText, following && styles.unfollowButtonText]}>
-                    {following ? 'following' : 'follow'}
-                  </Text>
+                  {processingFollow ? (
+                    <ActivityIndicator color={following ? themeColors.text : "#fff"} size="small" />
+                  ) : (
+                    <View style={styles.buttonInner}>
+                      {following && <Ionicons name="checkmark" size={16} color={themeColors.text} style={{ marginRight: 4 }} />}
+                      <Text style={[styles.buttonText, { color: following ? themeColors.text : '#fff' }]}>
+                        {following ? 'Following' : 'Follow'}
+                      </Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
               )}
               
-              <TouchableOpacity style={styles.viewProfileButton} onPress={viewFullProfile}>
-                <Text style={styles.viewProfileText}>view full profile</Text>
+              <TouchableOpacity 
+                style={[styles.viewProfileButton, { backgroundColor: themeColors.card, borderColor: themeColors.border, borderWidth: 1 }]} 
+                onPress={viewFullProfile}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.viewProfileText, { color: themeColors.text }]}>View Profile</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -152,27 +180,31 @@ export default function UserPreviewModal({ userId, isVisible, onClose }: UserPre
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'transparent',
   },
   modalContent: {
-    backgroundColor: '#1e2126',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    minHeight: 320,
-    paddingHorizontal: 20,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    minHeight: 340,
+    paddingHorizontal: 24,
     paddingBottom: 40,
     position: 'absolute',
     bottom: 0,
     width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -12 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 30,
   },
   handle: {
-    width: 40,
-    height: 4,
-    backgroundColor: '#38383d',
-    borderRadius: 2,
+    width: 36,
+    height: 5,
+    borderRadius: 3,
     alignSelf: 'center',
-    marginTop: 12,
-    marginBottom: 20,
+    marginTop: 10,
+    marginBottom: 24,
+    opacity: 0.5,
   },
   loadingBox: {
     height: 200,
@@ -191,7 +223,6 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#38383d',
   },
   headerText: {
     marginLeft: 16,
@@ -202,8 +233,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   handleText: {
-    color: '#64748b',
     fontSize: 14,
+    fontFamily: 'Roboto',
+    opacity: 0.8,
   },
   statsRow: {
     flexDirection: 'row',
@@ -214,20 +246,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statNumber: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontFamily: 'Roboto-Bold',
+    fontWeight: '700',
   },
   statLabel: {
-    color: '#64748b',
     fontSize: 12,
+    fontFamily: 'Roboto',
     textTransform: 'lowercase',
+    marginTop: 2,
+    opacity: 0.6,
   },
   bio: {
-    color: '#e2e8f0',
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 24,
+    fontSize: 15,
+    lineHeight: 22,
+    fontFamily: 'Roboto',
+    marginBottom: 28,
   },
   actions: {
     flexDirection: 'row',
@@ -235,38 +269,37 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    height: 48,
-    borderRadius: 24,
+    height: 50,
+    borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
   },
   followButton: {
-    backgroundColor: '#c1ff72',
   },
   unfollowButton: {
-    borderWidth: 1,
-    borderColor: '#38383d',
+    borderWidth: 1.5,
     backgroundColor: 'transparent',
   },
   buttonText: {
-    color: '#1e2126',
     fontSize: 15,
     fontWeight: 'bold',
-  },
-  unfollowButtonText: {
-    color: '#fff',
+    fontFamily: 'Roboto-Bold',
   },
   viewProfileButton: {
     flex: 1,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#38383d',
+    height: 50,
+    borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
   },
   viewProfileText: {
-    color: '#fff',
     fontSize: 15,
     fontWeight: 'bold',
+    fontFamily: 'Roboto-Bold',
+  },
+  buttonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

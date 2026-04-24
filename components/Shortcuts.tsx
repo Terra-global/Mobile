@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useThemeStore } from '../store/themeStore';
+import { Colors } from '../constants/theme';
 
 type Shortcut = {
   label: string;
@@ -12,13 +14,16 @@ type Shortcut = {
 const SHORTCUTS: Shortcut[] = [
   { label: 'Crop',    icon: 'leaf-outline',        route: '/oracle/crop' },
   { label: 'Animal',  icon: 'paw-outline',         route: '/oracle/animal' },
+  { label: 'Messages',icon: 'chatbubbles-outline', route: '/messages' },
 ];
 
 export default function Shortcuts() {
   const router = useRouter();
+  const { theme } = useThemeStore();
+  const themeColors = Colors[theme];
 
   return (
-    <View style={styles.sidebar}>
+    <View style={[styles.sidebar, { backgroundColor: theme === 'dark' ? 'rgba(30, 33, 38, 0.85)' : 'rgba(255, 255, 255, 0.85)', borderColor: themeColors.border }]}>
       {SHORTCUTS.map((s) => (
         <TouchableOpacity
           key={s.route}
@@ -26,10 +31,10 @@ export default function Shortcuts() {
           activeOpacity={0.75}
           onPress={() => router.push(s.route as any)}
         >
-          <View style={styles.iconBox}>
-            <Ionicons name={s.icon} size={24} color="#c1ff72" />
+          <View style={[styles.iconBox, { backgroundColor: theme === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.05)' }]}>
+            <Ionicons name={s.icon} size={24} color={themeColors.tint} />
           </View>
-          <Text style={styles.label}>{s.label}</Text>
+          <Text style={[styles.label, { color: themeColors.text }]}>{s.label}</Text>
         </TouchableOpacity>
       ))}
     </View>
@@ -39,13 +44,11 @@ export default function Shortcuts() {
 const styles = StyleSheet.create({
   sidebar: {
     width: 68,
-    backgroundColor: 'rgba(56, 56, 61, 0.8)',
     borderRadius: 24,
     paddingVertical: 16,
     alignItems: 'center',
     gap: 20,
     borderWidth: 1,
-    borderColor: 'rgba(193, 255, 114, 0.1)',
     // Floating effect
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
@@ -67,7 +70,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   label: {
-    color: '#fff',
     fontSize: 10,
     fontFamily: 'Roboto',
     textAlign: 'center',

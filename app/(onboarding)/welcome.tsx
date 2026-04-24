@@ -5,48 +5,52 @@ import { ThemedText } from '@/components/themed-text';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/store/authStore';
+import { useThemeStore } from '@/store/themeStore';
+import { Colors } from '@/constants/theme';
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const user = useAuthStore(state => state.user);
+  const { theme } = useThemeStore();
+  const themeColors = Colors[theme];
 
   return (
-    <View style={[styles.container, { paddingTop: Math.max(insets.top, 20) }]}>
-      <StatusBar style="light" />
+    <View style={[styles.container, { backgroundColor: themeColors.background, paddingTop: Math.max(insets.top, 20) }]}>
+      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
 
       {/* ── User Info ── */}
       <View style={styles.userRow}>
         <Image 
           source={{ uri: user?.avatarUrl || 'https://api.dicebear.com/7.x/identicon/png?seed=DemoUser' }} 
-          style={styles.avatar} 
+          style={[styles.avatar, { backgroundColor: themeColors.card }]} 
         />
         <View>
-          <Text style={styles.userName}>{user?.username || 'New User'}</Text>
-          <Text style={styles.userEmail}>{user?.email || 'No email'}</Text>
+          <Text style={[styles.userName, { color: themeColors.text }]}>{user?.username || 'New User'}</Text>
+          <Text style={[styles.userEmail, { color: themeColors.subtext }]}>{user?.email || 'No email'}</Text>
         </View>
       </View>
 
       {/* ── Body ── */}
       <View style={styles.body}>
-        <ThemedText style={styles.welcomeText}>Welcome</ThemedText>
+        <ThemedText style={[styles.welcomeText, { color: themeColors.text }]}>Welcome</ThemedText>
 
         <TouchableOpacity
-          style={styles.completeButton}
+          style={[styles.completeButton, { backgroundColor: themeColors.tint }]}
           onPress={() => router.push('/(onboarding)/profile-setup')}
         >
           <Text style={styles.completeButtonText}>Complete Your Profile</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.pitchLink}>
-          <Text style={styles.pitchText}>Watch Our Pitch</Text>
+          <Text style={[styles.pitchText, { color: themeColors.text }]}>Watch Our Pitch</Text>
         </TouchableOpacity>
       </View>
 
       {/* ── Fixed Footer ── */}
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+      <View style={[styles.footer, { backgroundColor: themeColors.background, paddingBottom: Math.max(insets.bottom, 20) }]}>
         <TouchableOpacity onPress={() => router.replace('/(tabs)')}>
-          <Text style={styles.footerText}>About Us</Text>
+          <Text style={[styles.footerText, { color: themeColors.text }]}>About Us</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -56,7 +60,6 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1e2126',
   },
   userRow: {
     flexDirection: 'row',
@@ -73,12 +76,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#38383d',
   },
   userName: {
-    color: '#fff',
     fontSize: 18,
     fontFamily: 'Roboto-Bold',
   },
   userEmail: {
-    color: '#999',
     fontSize: 13,
     fontFamily: 'Roboto',
     marginTop: 2,
@@ -91,12 +92,10 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 48,
     fontFamily: 'Roboto',
-    color: '#fff',
     marginBottom: 32,
     lineHeight: 56,
   },
   completeButton: {
-    backgroundColor: '#c1ff72',
     borderRadius: 16,
     height: 60,
     alignItems: 'center',
@@ -104,7 +103,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   completeButtonText: {
-    color: '#1e2126',
+    color: '#fff',
     fontSize: 18,
     fontFamily: 'Roboto-Bold',
   },
@@ -112,7 +111,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   pitchText: {
-    color: '#fff',
     fontSize: 15,
     fontFamily: 'Roboto',
     opacity: 0.8,
@@ -120,10 +118,8 @@ const styles = StyleSheet.create({
   footer: {
     alignItems: 'center',
     paddingTop: 16,
-    backgroundColor: '#1e2126',
   },
   footerText: {
-    color: '#fff',
     fontSize: 16,
     fontFamily: 'Roboto-Bold',
   },

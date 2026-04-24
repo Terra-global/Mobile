@@ -13,25 +13,16 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import GlobalAlert from '../components/GlobalAlert';
 import LineLoader from '../components/LineLoader';
 import { useLoadingStore } from '../store/loadingStore';
+import { useThemeStore } from '../store/themeStore';
+import { Colors } from '../constants/theme';
 import { configureGoogleSignin } from '../utils/google-auth';
 
 // Initialize Google Sign-In
 configureGoogleSignin();
 
 // Set native background color immediately to prevent white flashes
-SystemUI.setBackgroundColorAsync('#1e2126');
+SystemUI.setBackgroundColorAsync('#0a0a0a');
 NavigationBar.setButtonStyleAsync('light');
-
-const CustomTheme = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    background: '#1e2126',
-    card: '#1e2126',
-    text: '#fff',
-    border: '#2a2d32',
-  },
-};
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -42,18 +33,36 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const setIsLoading = useLoadingStore(state => state.setIsLoading);
+  const { theme } = useThemeStore();
+  const themeColors = Colors[theme];
+
   const [loaded] = useFonts({
     Roboto: Roboto_400Regular,
     'Roboto-Bold': Roboto_700Bold,
   });
 
+  const DynamicTheme = {
+    ...DarkTheme,
+    colors: {
+      ...DarkTheme.colors,
+      background: themeColors.background,
+      card: themeColors.background,
+      text: themeColors.text,
+      border: themeColors.border,
+    },
+  };
+
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
+      SystemUI.setBackgroundColorAsync(themeColors.background);
+      
+      // Update Android Navigation Bar
+      NavigationBar.setBackgroundColorAsync(themeColors.background);
+      NavigationBar.setButtonStyleAsync(theme === 'dark' ? 'light' : 'dark');
     }
-  }, [loaded]);
+  }, [loaded, themeColors.background, theme]);
 
   if (!loaded) {
     return null;
@@ -61,11 +70,11 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={CustomTheme}>
+      <ThemeProvider value={DynamicTheme}>
           <Stack
             screenOptions={{
               headerShown: false,
-              contentStyle: { backgroundColor: '#1e2126' },
+              contentStyle: { backgroundColor: themeColors.background },
               animation: 'none',
             }}
           >
@@ -74,13 +83,14 @@ export default function RootLayout() {
             <Stack.Screen name="(onboarding)" />
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="profile" />
-            <Stack.Screen name="account" />
+            <Stack.Screen name="account/index" options={{ title: 'Account' }} />
+            <Stack.Screen name="account/info" options={{ title: 'Account Info' }} />
+            <Stack.Screen name="account/farm-type" options={{ title: 'Farm Type' }} />
             <Stack.Screen name="new-post" options={{ presentation: 'modal', title: 'New Post' }} />
-            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
           </Stack>
         <LineLoader />
         <GlobalAlert />
-        <StatusBar style="light" />
+        <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
       </ThemeProvider>
     </GestureHandlerRootView>
   );

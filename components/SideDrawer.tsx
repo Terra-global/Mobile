@@ -11,6 +11,8 @@ import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useThemeStore } from '../store/themeStore';
+import { Colors } from '../constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.75;
@@ -33,6 +35,8 @@ export function useDrawer() {
 export default function SideDrawer({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { theme } = useThemeStore();
+  const themeColors = Colors[theme];
   
   const translateX = useSharedValue(DRAWER_WIDTH);
   const contextValue = useSharedValue(0);
@@ -95,31 +99,31 @@ export default function SideDrawer({ children }: { children: React.ReactNode }) 
         </Animated.View>
 
         {/* ── Drawer ── */}
-        <Animated.View style={[styles.drawer, drawerStyle]}>
+        <Animated.View style={[styles.drawer, drawerStyle, { backgroundColor: themeColors.background, borderLeftColor: themeColors.border, borderLeftWidth: theme === 'light' ? 1 : 0 }]}>
           <View style={[styles.drawerContent, { paddingTop: insets.top + 40 }]}>
-            <Text style={styles.sectionTitle}>analytical tools</Text>
+            <Text style={[styles.sectionTitle, { color: themeColors.subtext }]}>analytical tools</Text>
             
             <View style={styles.toolGrid}>
               <TouchableOpacity 
-                style={[styles.gridItem, styles.borderRight, styles.borderBottom]} 
+                style={[styles.gridItem, styles.borderRight, styles.borderBottom, { borderRightColor: themeColors.border, borderBottomColor: themeColors.border, borderTopColor: themeColors.border }]} 
                 onPress={() => navigateTo('/oracle/crop')}
               >
-                <Ionicons name="leaf-outline" size={32} color="#fff" />
-                <Text style={styles.gridLabel}>Crop Data</Text>
+                <Ionicons name="leaf-outline" size={32} color={themeColors.tint} />
+                <Text style={[styles.gridLabel, { color: themeColors.text }]}>Crop Data</Text>
               </TouchableOpacity>
-
+ 
               <TouchableOpacity 
-                style={[styles.gridItem, styles.borderBottom]} 
+                style={[styles.gridItem, styles.borderBottom, { borderBottomColor: themeColors.border, borderTopColor: themeColors.border }]} 
                 onPress={() => navigateTo('/oracle/animal')}
               >
-                <Ionicons name="paw-outline" size={32} color="#fff" />
-                <Text style={styles.gridLabel}>Animal Data</Text>
+                <Ionicons name="paw-outline" size={32} color={themeColors.tint} />
+                <Text style={[styles.gridLabel, { color: themeColors.text }]}>Animal Data</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           <View style={[styles.drawerFooter, { paddingBottom: insets.bottom + 20 }]}>
-            <Text style={styles.footerText}>terra v1.0.0</Text>
+            <Text style={[styles.footerText, { color: themeColors.border }]}>terra v1.0.0</Text>
           </View>
         </Animated.View>
       </View>
@@ -128,10 +132,9 @@ export default function SideDrawer({ children }: { children: React.ReactNode }) 
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1e2126' },
+  container: { flex: 1 },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#000',
     zIndex: 99,
   },
   drawer: {
@@ -140,19 +143,15 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: DRAWER_WIDTH,
-    backgroundColor: '#1e2126',
     zIndex: 100,
     shadowColor: '#000',
     shadowOffset: { width: -10, height: 0 },
-    shadowOpacity: 0.5,
+    shadowOpacity: 0.1,
     shadowRadius: 20,
     elevation: 25,
-    borderLeftWidth: 1,
-    borderLeftColor: '#38383d',
   },
   drawerContent: { flex: 1 },
   sectionTitle: { 
-    color: '#64748b', 
     fontSize: 11, 
     fontWeight: '500', 
     textTransform: 'lowercase', 
@@ -171,28 +170,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 20,
     backgroundColor: 'transparent',
-    borderTopWidth: 1,
-    borderTopColor: '#38383d',
+    borderTopWidth: 0.5,
   },
   gridLabel: { 
-    color: '#fff', 
     fontSize: 13, 
     fontWeight: '500',
     textAlign: 'center',
     marginTop: 12,
   },
   borderRight: {
-    borderRightWidth: 1,
-    borderRightColor: '#38383d',
+    borderRightWidth: 0.5,
   },
   borderBottom: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#38383d',
+    borderBottomWidth: 0.5,
   },
   
   drawerFooter: {
     padding: 24,
     alignItems: 'center',
   },
-  footerText: { color: '#444', fontSize: 11, fontWeight: 'bold', textTransform: 'lowercase' },
+  footerText: { fontSize: 11, fontWeight: 'bold', textTransform: 'lowercase' },
 });

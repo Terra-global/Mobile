@@ -9,10 +9,12 @@ import api from '../utils/api';
 import PostCard from '../components/PostCard';
 import UserPreviewModal from '../components/UserPreviewModal';
 import { useLoadingStore } from '../store/loadingStore';
+import { useThemeStore } from '../store/themeStore';
+import { Colors } from '../constants/theme';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const currentUser = useAuthStore(state => state.user);
   
   // If no ID is provided, we're viewing our own profile
@@ -26,10 +28,15 @@ export default function ProfileScreen() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState<'posts' | 'likes'>('posts');
+  const [likedPosts, setLikedPosts] = useState<any[]>([]);
   const clearAuth = useAuthStore(state => state.clearAuth);
   const setIsLoading = useLoadingStore(state => state.setIsLoading);
+  const { theme } = useThemeStore();
+  const themeColors = Colors[theme];
 
   const fetchProfile = async () => {
+    if (!userId) return;
     try {
       const res = await api.get(`/users/profile/${userId}`);
       if (res.data.success) {
@@ -41,6 +48,7 @@ export default function ProfileScreen() {
   };
 
   const fetchPosts = async () => {
+    if (!userId) return;
     try {
       const res = await api.get(`/posts/user/${userId}`);
       if (res.data.success) {
@@ -50,10 +58,25 @@ export default function ProfileScreen() {
       console.error('Failed to fetch user posts:', error);
     }
   };
+  
+  const fetchLikedPosts = async () => {
+    if (!userId) return;
+    try {
+      const res = await api.get(`/posts/user/${userId}/likes`);
+      if (res.data.success) {
+        setLikedPosts(res.data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch liked posts:', error);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
-    await Promise.all([fetchProfile(), fetchPosts()]);
+    await Promise.all([
+      fetchProfile(), 
+      activeTab === 'posts' ? fetchPosts() : fetchLikedPosts()
+    ]);
     setLoading(false);
     setIsLoading(false);
   };
@@ -95,9 +118,20 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleDeletePost = async (postId: string) => {
+    try {
+      const res = await api.delete(`/posts/${postId}`);
+      if (res.data.success) {
+        setPosts(prev => prev.filter(p => p.id !== postId));
+      }
+    } catch (error) {
+      console.error('Failed to delete post:', error);
+    }
+  };
+
   useEffect(() => {
     loadData();
-  }, [userId]);
+  }, [userId, activeTab]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -111,58 +145,74 @@ export default function ProfileScreen() {
         <View style={styles.avatarContainer}>
           <Image 
             source={{ uri: (isOwnProfile ? currentUser?.avatarUrl : profile?.avatarUrl) || 'https://api.dicebear.com/7.x/identicon/png?seed=' + profile?.username }} 
-            style={styles.avatar} 
+            style={[styles.avatar, { borderColor: themeColors.background, backgroundColor: themeColors.card }]} 
           />
         </View>
 
-        <Text style={styles.name}>{profile?.username || 'user'}</Text>
-        <Text style={styles.handle}>@{profile?.username?.toLowerCase()}</Text>
+        <Text style={[styles.name, { color: themeColors.text }]}>
+          {profile?.farmType?.name && (
+            <Text>{{'Subsistence Farmer': '🌾', 'Hobby Farmer': '🏡', 'Smallholder': '🌱', 'Contract Farmer': '📋', 'Livestock Producer': '🐄', 'Arable Farmer': '🌽', 'Horticulturalist': '🍅', 'Aquaculture Farmer': '🐟'}[profile.farmType.name as string] || '🌱'} </Text>
+          )}{profile?.username || 'user'}
+        </Text>
+        <Text style={[styles.handle, { color: themeColors.subtext }]}>@{profile?.username?.toLowerCase()}</Text>
         
-        {profile?.bio && <Text style={styles.bio}>{profile.bio}</Text>}
+        {profile?.bio && <Text style={[styles.bio, { color: themeColors.text, opacity: 0.9 }]}>{profile.bio}</Text>}
         
         {profile?.website && (
           <TouchableOpacity onPress={() => Linking.openURL(profile.website)} style={styles.websiteRow}>
-            <Ionicons name="link-outline" size={16} color="#c1ff72" />
-            <Text style={styles.websiteText}>{profile.website.replace(/^https?:\/\//, '')}</Text>
+            <Ionicons name="link-outline" size={16} color={themeColors.tint} />
+            <Text style={[styles.websiteText, { color: themeColors.tint }]}>{profile.website.replace(/^https?:\/\//, '')}</Text>
           </TouchableOpacity>
         )}
 
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{profile?._count?.following || 0}</Text>
-            <Text style={styles.statLabel}>Following</Text>
+            <Text style={[styles.statNumber, { color: themeColors.text }]}>{profile?._count?.following || 0}</Text>
+            <Text style={[styles.statLabel, { color: themeColors.subtext }]}>Following</Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{profile?._count?.followers || 0}</Text>
-            <Text style={styles.statLabel}>Followers</Text>
+            <Text style={[styles.statNumber, { color: themeColors.text }]}>{profile?._count?.followers || 0}</Text>
+            <Text style={[styles.statLabel, { color: themeColors.subtext }]}>Followers</Text>
           </View>
+          {isOwnProfile && (
+            <TouchableOpacity style={styles.statItem} onPress={() => router.push('/account/referrals' as any)}>
+              <Text style={[styles.statNumber, { color: themeColors.text }]}>{profile?._count?.referrals || 0}</Text>
+              <Text style={[styles.statLabel, { color: themeColors.subtext }]}>Referrals</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
-      <View style={styles.tabs}>
-        <TouchableOpacity style={[styles.tab, styles.activeTab]}>
-          <Text style={[styles.tabText, styles.activeTabText]}>Posts</Text>
+      <View style={[styles.tabs, { borderBottomColor: themeColors.border }]}>
+        <TouchableOpacity 
+          style={[styles.tab, activeTab === 'posts' && [styles.activeTab, { borderBottomColor: themeColors.tint }]]}
+          onPress={() => setActiveTab('posts')}
+        >
+          <Text style={[styles.tabText, { color: activeTab === 'posts' ? themeColors.text : themeColors.subtext }]}>Posts</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.tab}>
-          <Text style={styles.tabText}>Likes</Text>
+        <TouchableOpacity 
+          style={[styles.tab, activeTab === 'likes' && [styles.activeTab, { borderBottomColor: themeColors.tint }]]}
+          onPress={() => setActiveTab('likes')}
+        >
+          <Text style={[styles.tabText, { color: activeTab === 'likes' ? themeColors.text : themeColors.subtext }]}>Likes</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar style="light" />
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]} edges={['top']}>
+      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
       
       {/* Top Navigation */}
       <View style={styles.topNav}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="arrow-back" size={24} color={themeColors.text} />
         </TouchableOpacity>
-        <Text style={styles.topNavTitle}>{profile?.username}</Text>
+        <Text style={[styles.topNavTitle, { color: themeColors.text }]}>{profile?.username}</Text>
         {isOwnProfile ? (
           <TouchableOpacity onPress={() => setIsMenuVisible(true)}>
-            <Ionicons name="ellipsis-vertical" size={20} color="#fff" />
+            <Ionicons name="ellipsis-vertical" size={20} color={themeColors.text} />
           </TouchableOpacity>
         ) : (
           <View style={{ width: 20 }} />
@@ -170,23 +220,39 @@ export default function ProfileScreen() {
       </View>
 
       <FlatList
-        data={posts}
+        data={activeTab === 'posts' ? posts : likedPosts}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={renderHeader}
         renderItem={({ item }) => (
           <PostCard 
             id={item.id}
             author={{
+              id: item.user.id,
               name: item.user.username || 'Anonymous',
-              avatar: item.user.avatarUrl
+              avatar: item.user.avatarUrl,
+              farmType: item.user.farmType?.name,
             }}
+            onMessagePress={
+              currentUser?.id !== item.user.id 
+                ? () => router.push(`/messages/${item.user.id}?name=${encodeURIComponent(item.user.username)}` as any)
+                : undefined
+            }
             content={item.content}
-            image={item.imageUrl}
+            tags={item.tags}
+            postType={item.postType}
+            price={item.price}
+            priceUnit={item.priceUnit}
+            quantity={item.quantity}
+            quantityUnit={item.quantityUnit}
+            location={item.location}
+            images={item.imageUrls}
             time={new Date(item.createdAt).toLocaleDateString()}
             likes={item._count?.likes || 0}
             comments={item._count?.comments || 0}
+            views={item.views || 0}
             isLiked={item.likes && item.likes.length > 0}
             onLikePress={() => toggleLike(item.id)}
+            onDeletePress={item.userId === currentUser?.id ? () => handleDeletePost(item.id) : undefined}
             onAuthorPress={() => {
               setSelectedUserId(item.userId);
               setIsPreviewVisible(true);
@@ -198,11 +264,11 @@ export default function ProfileScreen() {
           />
         )}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#c1ff72" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={themeColors.tint} />
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>no posts yet</Text>
+            <Text style={[styles.emptyText, { color: themeColors.subtext }]}>no posts yet</Text>
           </View>
         }
         contentContainerStyle={{ paddingBottom: 20 }}
@@ -220,7 +286,7 @@ export default function ProfileScreen() {
           style={styles.dropdownOverlay} 
           onPress={() => setIsMenuVisible(false)}
         >
-          <View style={styles.menuContainer}>
+          <View style={[styles.menuContainer, { backgroundColor: themeColors.card, borderColor: themeColors.border, borderWidth: 1 }]}>
             <TouchableOpacity 
               style={styles.menuItem} 
               onPress={() => {
@@ -228,8 +294,18 @@ export default function ProfileScreen() {
                 router.push('/account');
               }}
             >
-              <Ionicons name="settings-outline" size={20} color="#fff" />
-              <Text style={styles.menuText}>Settings</Text>
+              <Ionicons name="settings-outline" size={20} color={themeColors.text} />
+              <Text style={[styles.menuText, { color: themeColors.text }]}>Settings</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.menuItem} 
+              onPress={() => {
+                setIsMenuVisible(false);
+                router.push('/account/referrals' as any);
+              }}
+            >
+              <Ionicons name="people-outline" size={20} color={themeColors.text} />
+              <Text style={[styles.menuText, { color: themeColors.text }]}>Referrals</Text>
             </TouchableOpacity>
           </View>
         </Pressable>
@@ -239,16 +315,16 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1e2126' },
+  container: { flex: 1 },
   topNav: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: 16, 
     paddingVertical: 12,
   },
-  topNavTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  header: { borderBottomWidth: 1, borderBottomColor: '#2a2d34' },
+  topNavTitle: { fontSize: 18, fontWeight: 'bold' },
+  header: { borderBottomWidth: 0.5 },
   profileInfo: { paddingHorizontal: 16, marginTop: 20 },
   avatarContainer: {
     flexDirection: 'row',
@@ -261,25 +337,23 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     borderWidth: 4,
-    borderColor: '#1e2126',
-    backgroundColor: '#38383d',
   },
-  name: { color: '#fff', fontSize: 22, fontWeight: 'bold', marginBottom: 2 },
-  handle: { color: '#64748b', fontSize: 15, marginBottom: 12 },
-  bio: { color: '#e2e8f0', fontSize: 15, lineHeight: 20, marginBottom: 12 },
+  name: { fontSize: 22, fontWeight: 'bold', marginBottom: 2 },
+  handle: { fontSize: 15, marginBottom: 12 },
+  bio: { fontSize: 15, lineHeight: 20, marginBottom: 12 },
   websiteRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 16 },
-  websiteText: { color: '#c1ff72', fontSize: 14, fontWeight: '500' },
+  websiteText: { fontSize: 14, fontWeight: '500' },
   statsRow: { flexDirection: 'row', gap: 20, marginBottom: 20 },
   statItem: { flexDirection: 'row', gap: 4 },
-  statNumber: { color: '#fff', fontWeight: 'bold' },
-  statLabel: { color: '#64748b' },
-  tabs: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#2a2d34' },
+  statNumber: { fontWeight: 'bold' },
+  statLabel: { },
+  tabs: { flexDirection: 'row', borderBottomWidth: 0.5 },
   tab: { flex: 1, alignItems: 'center', paddingVertical: 14 },
-  activeTab: { borderBottomWidth: 2, borderBottomColor: '#c1ff72' },
-  tabText: { color: '#64748b', fontWeight: 'bold', fontSize: 15 },
-  activeTabText: { color: '#fff' },
+  activeTab: { borderBottomWidth: 2 },
+  tabText: { fontWeight: 'bold', fontSize: 15 },
+  activeTabText: { },
   emptyContainer: { paddingVertical: 60, alignItems: 'center' },
-  emptyText: { color: '#64748b', fontSize: 16 },
+  emptyText: { fontSize: 16 },
   dropdownOverlay: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 1000,
@@ -289,7 +363,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 60,
     right: 16,
-    backgroundColor: '#2a2d34',
     borderRadius: 12,
     width: 180,
     padding: 8,
@@ -307,13 +380,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   menuText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '500',
   },
   menuDivider: {
     height: 1,
-    backgroundColor: '#38383d',
     marginVertical: 4,
   },
 });
