@@ -15,7 +15,11 @@
       "package": "com.terramobile.app",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
       "adaptiveIcon": {
         "backgroundColor": "#0a0a0a",
@@ -61,8 +65,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "0cde130f-a60c-4f3a-bda1-40da11cc57b8"
+        "projectId": "8f495da4-024e-4758-85a1-17df4921aadb"
       }
-    }
+    },
+    "owner": "terra_project"
   }
 }
