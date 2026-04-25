@@ -6,24 +6,13 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "env": {
-        "EXPO_PUBLIC_GEMINI_API_KEY": "AIzaSyBW7GjQoCqMR1lBJWu77ak6Si9JoBHj7Ec"
-      }
+      "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal",
-      "env": {
-        "EXPO_PUBLIC_API_URL": "https://server-sr85.onrender.com/api",
-        "EXPO_PUBLIC_GEMINI_API_KEY": "AIzaSyBW7GjQoCqMR1lBJWu77ak6Si9JoBHj7Ec"
-      }
+      "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true,
-      "env": {
-        "EXPO_PUBLIC_API_URL": "https://server-sr85.onrender.com/api",
-        "EXPO_PUBLIC_GEMINI_API_KEY": "AIzaSyBW7GjQoCqMR1lBJWu77ak6Si9JoBHj7Ec"
-      }
+      "autoIncrement": true
     }
   },
   "submit": {
